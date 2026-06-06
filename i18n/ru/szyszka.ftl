@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Файлы/Папки({ $files_number }) 
 button_select_all = Выделить все
 button_select_reverse = Обратный выбор
 button_select_custom = Выбрать пользовательский
-button_unselect_custom = Снять выбор
+button_unselect_all = Снять выделение со всех
 button_select_changed = Выбрать измененные
 button_unselect_changed = Снять отметку с изменений
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Результаты устарели
 dialog_results_of_renaming = Результаты переименования
 dialog_save_rule = Сохранить правило
 dialog_select_custom = Выбрать пользовательский
-dialog_unselect_custom = Снять выбор
+settings_open_log_folder = Открыть папку журналов
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - выводит numbers(аргументы являются необязательными)
     $(N:3:4:5) выводит числа из 3, на четвертом шаге
             и заполняет их нулями до 5 позиций.
-    	К вместо этого только позиция в списке, также использует элемент позиции в папке.
+            К вместо этого только позиция в списке, также использует элемент позиции в папке.
 menu_button_load_custom_rule = Пользовательский выбор правил
 button_save_custom_rule = Сохранить пользовательское правило
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Без учета регистра
 label_trim_trim_text = Обрезать текст
 label_trim_case_sensitivity = Чувствительность к регистру
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Все
 check_button_normalize_partial = Частично
 # RuleType

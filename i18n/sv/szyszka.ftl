@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Filer/Mappar({ $files_number }) - aktuell
 button_select_all = Markera alla
 button_select_reverse = Omvänd markering
 button_select_custom = Välj anpassad
-button_unselect_custom = Avmarkera anpassad
+button_unselect_all = Avmarkera alla
 button_select_changed = Välj Ändrad
 button_unselect_changed = Avmarkera ändrad
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Föråldrade resultat
 dialog_results_of_renaming = Resultat av att byta namn
 dialog_save_rule = Spara regel
 dialog_select_custom = Välj anpassad
-dialog_unselect_custom = Avmarkera anpassad
+settings_open_log_folder = Öppna loggmapp
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - utskrifter siffror (argument är frivilliga)
     $(N:3:4:5) utskrifter nummer från 3, med steg 4
             och fyller dem med nollor till 5 positioner.
-    	<unk> K istället bara position i listan, använder även positionsobjekt i mappen.
+            <unk> K istället bara position i listan, använder även positionsobjekt i mappen.
 menu_button_load_custom_rule = Anpassad regel väljare
 button_save_custom_rule = Spara anpassad regel
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Ärendet okänslig
 label_trim_trim_text = Trimma text
 label_trim_case_sensitivity = Ärendets känslighet
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Allt
 check_button_normalize_partial = Delvis
 # RuleType

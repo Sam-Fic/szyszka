@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Archivos({ $files_number }) - actualizado
 button_select_all = Seleccionar todo
 button_select_reverse = Invertir selección
 button_select_custom = Seleccionar Personalizado
-button_unselect_custom = Deseleccionar Personalizado
+button_unselect_all = Deseleccionar todo
 button_select_changed = Seleccionar cambiado
 button_unselect_changed = Deseleccionar cambiado
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Resultados obsoletos
 dialog_results_of_renaming = Resultados del renombrado
 dialog_save_rule = Guardar regla
 dialog_select_custom = Seleccionar Personalizado
-dialog_unselect_custom = Deseleccionar Personalizado
+settings_open_log_folder = Abrir carpeta de registros
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - prints numbers(arguments are optional)
     $(N:3:4:5) print numbers from 3, con el paso 4
             y los llena con cero a 5 posiciones.
-    	K en su lugar sólo la posición en la lista, también utiliza el elemento de posición en la carpeta.
+            K en su lugar sólo la posición en la lista, también utiliza el elemento de posición en la carpeta.
 menu_button_load_custom_rule = Selector de reglas personalizado
 button_save_custom_rule = Guardar regla personalizada
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Insensible a mayúsculas
 label_trim_trim_text = Recortar texto
 label_trim_case_sensitivity = Sensibilidad de Caso
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Todo
 check_button_normalize_partial = Parcial
 # RuleType

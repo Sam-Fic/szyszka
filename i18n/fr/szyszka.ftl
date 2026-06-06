@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Fichiers/Dossiers ({ $files_number }) - �
 button_select_all = Tout sélectionner
 button_select_reverse = Inverser la sélection
 button_select_custom = Sélectionnez Personnalisé
-button_unselect_custom = Désélectionner Personnalisé
+button_unselect_all = Tout désélectionner
 button_select_changed = Sélectionner les modifications
 button_unselect_changed = Désélectionner Changé
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Résultats périmés
 dialog_results_of_renaming = Résultats du renommage
 dialog_save_rule = Enregistrer la règle
 dialog_select_custom = Sélectionnez Personnalisé
-dialog_unselect_custom = Désélectionner Personnalisé
+settings_open_log_folder = Ouvrir le dossier des journaux
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - affiche les nombres (les arguments sont facultatifs)
     $(N:3:4:5) affiche les numéros à partir de 3, avec l'étape 4
             et les remplit avec des zéros à 5 positions.
-    	K à la place seulement position dans la liste, utilise également l'élément de position dans le dossier.
+            K à la place seulement position dans la liste, utilise également l'élément de position dans le dossier.
 menu_button_load_custom_rule = Sélecteur de règles personnalisé
 button_save_custom_rule = Enregistrer la règle personnalisée
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Cas Insensible
 label_trim_trim_text = Couper le texte
 label_trim_case_sensitivity = Sensibilité à la casse
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Tout
 check_button_normalize_partial = Partiellement
 # RuleType

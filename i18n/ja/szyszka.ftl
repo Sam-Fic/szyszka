@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = ファイル/フォルダ({ $files_number
 button_select_all = すべて選択
 button_select_reverse = 選択を逆にする
 button_select_custom = カスタムを選択
-button_unselect_custom = カスタムの選択を解除
+button_unselect_all = すべて選択解除
 button_select_changed = 変更を選択
 button_unselect_changed = 選択解除の変更
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = 古い結果
 dialog_results_of_renaming = 名前を変更した結果
 dialog_save_rule = ルールの保存
 dialog_select_custom = カスタムを選択
-dialog_unselect_custom = カスタムの選択を解除
+settings_open_log_folder = ログフォルダーを開く
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - prints numbers(arguments are optional)
     $(N:3:4:5) prints numbers from 3, with step 4
             and fills them with zeros to 5 positions.
-    	K instead only position in list, also uses position item in folder.
+            K instead only position in list, also uses position item in folder.
 menu_button_load_custom_rule = カスタムルール選択
 button_save_custom_rule = カスタムルールを保存
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = 大文字小文字を区別しない
 label_trim_trim_text = テキストをトリムする
 label_trim_case_sensitivity = ケース感度
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = すべて
 check_button_normalize_partial = 部分的な
 # RuleType

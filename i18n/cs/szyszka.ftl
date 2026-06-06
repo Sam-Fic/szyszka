@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Soubory/Složky({ $files_number }) - aktu
 button_select_all = Vybrat vše
 button_select_reverse = Reverzní výběr
 button_select_custom = Vybrat vlastní
-button_unselect_custom = Zrušit výběr vlastních
+button_unselect_all = Zrušit výběr vše
 button_select_changed = Vybrat změněné
 button_unselect_changed = Zrušit výběr změněn
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Zastaralé výsledky
 dialog_results_of_renaming = Výsledky přejmenování
 dialog_save_rule = Uložit pravidlo
 dialog_select_custom = Vybrat vlastní
-dialog_unselect_custom = Zrušit výběr vlastních
+settings_open_log_folder = Otevřít složku logů
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - vytiskne čísla (argumenty jsou volitelné)
     $(N:3:4:5) vytiskne čísla od 3, s kroku 4
             a vyplní je nulami na 5 pozic.
-    	K místo pouze pozice v seznamu, také používá položku pozice ve složce.
+            K místo pouze pozice v seznamu, také používá položku pozice ve složce.
 menu_button_load_custom_rule = Vlastní výběr pravidel
 button_save_custom_rule = Uložit vlastní pravidlo
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Rozlišovat velikost písmen
 label_trim_trim_text = Oříznout text
 label_trim_case_sensitivity = Citlivost případu
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Vše
 check_button_normalize_partial = Částečné
 # RuleType

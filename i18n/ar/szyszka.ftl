@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = الملفات/المجلدات ({ $files
 button_select_all = حدد الكل
 button_select_reverse = الاختيار العكسي
 button_select_custom = تحديد مخصص
-button_unselect_custom = إلغاء تحديد مخصص
+button_unselect_all = إلغاء تحديد الكل
 button_select_changed = حدد التغيير
 button_unselect_changed = غير محدد
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = النتائج العتيقة
 dialog_results_of_renaming = نتائج إعادة التسمية
 dialog_save_rule = حفظ القاعدة
 dialog_select_custom = تحديد مخصص
-dialog_unselect_custom = إلغاء تحديد مخصص
+settings_open_log_folder = فتح مجلد السجل
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - أرقام الطباعة (الحجج اختيارية)
     $(N3:4:5) الطباعة أرقام من 3، مع الخطوة 4
             و تملئهم بأصفار إلى 5 مواقع.
-    	<unk> K بدلاً من ذلك فقط في القائمة، يستخدم أيضًا عنصر الموضع في المجلد.
+            <unk> K بدلاً من ذلك فقط في القائمة، يستخدم أيضًا عنصر الموضع في المجلد.
 menu_button_load_custom_rule = اختيار قاعدة مخصصة
 button_save_custom_rule = حفظ قاعدة مخصصة
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = حالة غير حساسة
 label_trim_trim_text = تقليم النص
 label_trim_case_sensitivity = حساسية الحالة
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = كل شيء
 check_button_normalize_partial = جزئي
 # RuleType

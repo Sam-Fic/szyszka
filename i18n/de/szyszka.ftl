@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = Dateien/Ordner ({ $files_number }) - Aktu
 button_select_all = Alle auswählen
 button_select_reverse = Auswahl umkehren
 button_select_custom = Eigene auswählen
-button_unselect_custom = Eigene Abwählen
+button_unselect_all = Alle abwählen
 button_select_changed = Geändert auswählen
 button_unselect_changed = Auswahl abwählen
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = Veraltete Ergebnisse
 dialog_results_of_renaming = Ergebnisse des Umbenennens
 dialog_save_rule = Regel speichern
 dialog_select_custom = Eigene auswählen
-dialog_unselect_custom = Eigene Abwählen
+settings_open_log_folder = Log-Ordner öffnen
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - druckt Zahlen (Argumente sind optional)
     $(N:3:4:5) gibt Zahlen aus 3 aus. mit Schritt 4
             und füllt sie mit Nullen bis 5 Positionen.
-    	K statt dessen nur Position in der Liste, verwendet auch Positionselement im Ordner.
+            K statt dessen nur Position in der Liste, verwendet auch Positionselement im Ordner.
 menu_button_load_custom_rule = Eigene Regelauswahl
 button_save_custom_rule = Eigene Regel speichern
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = Groß-/Kleinschreibung
 label_trim_trim_text = Text kürzen
 label_trim_case_sensitivity = Groß-/Kleinschreibung
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = Alles
 check_button_normalize_partial = Teilweise
 # RuleType

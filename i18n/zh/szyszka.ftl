@@ -42,7 +42,7 @@ upper_files_folders_label_up_to_date = 文件/文件夹({ $files_number }) - 最
 button_select_all = 选择所有
 button_select_reverse = 反向选择
 button_select_custom = 选择自定义
-button_unselect_custom = 取消选择自定义
+button_unselect_all = 取消选择所有
 button_select_changed = 选择已更改
 button_unselect_changed = 取消选择更改
 # Un/Select custom
@@ -68,7 +68,7 @@ dialog_outdated_results = 过时的结果
 dialog_results_of_renaming = 重命名结果
 dialog_save_rule = 保存规则
 dialog_select_custom = 选择自定义
-dialog_unselect_custom = 取消选择自定义
+settings_open_log_folder = 打开日志文件夹
 
 # Rule Window
 
@@ -93,7 +93,7 @@ label_custom_instruction =
     $(N)/$(K) - 打印数字(参数是可选的)
     $(N:3:4:5) 打印数字从3, 打印数字。 带第4步
             并填充零到5个位置。
-    	K只是列表中的位置，也使用文件夹中的位置项。
+            K只是列表中的位置，也使用文件夹中的位置项。
 menu_button_load_custom_rule = 自定义规则选择器
 button_save_custom_rule = 保存自定义规则
 
@@ -148,14 +148,7 @@ check_button_trim_case_insensitive = 不敏感大小写
 label_trim_trim_text = 修剪文本
 label_trim_case_sensitivity = 案例灵敏度
 # Normalize name
-label_normalize_name =
-    Everything - renames the name to one that contains only the
-                              characters `a-z`, `0-9`, `-`, ` `, `.`.
-                              e.g. `żółć CZERona.Txt` -> `zolc-czerwona.txt`
-    
-    Partial - works exactly same as option above, but allows
-                      to use spaces ` ` and big letters `A-Z`
-                      e.g. ` Źrebię Krokietowe.Rar ` -> `Zrebie Krokietowe.Rar`
+label_normalize_name = Everything - only `a-z 0-9 - . space`. Partial - also allows `A-Z` and spaces.
 check_button_normalize_everything = 全部内容
 check_button_normalize_partial = 部分的
 # RuleType

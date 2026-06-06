@@ -1,8 +1,7 @@
 use std::cmp::min;
 use std::path::Path;
 
-use crate::help_function::split_file_name;
-use crate::rule::rules::*;
+use crate::rule::rules::{split_file_name, RulePlace, RuleType, SingleRule};
 
 pub fn rule_add_number(data_to_change: &str, rule: &SingleRule, rule_number: u64) -> String {
     let (name, extension) = split_file_name(Path::new(data_to_change));
@@ -15,15 +14,13 @@ pub fn rule_add_number(data_to_change: &str, rule: &SingleRule, rule_number: u64
 
     match rule.rule_type {
         RuleType::AddNumber => {
-            // TODO think about putting it to docs or explaining it somewhere that bigger values will crash entire app
             let fill_with_zeros = min(fill_with_zeros, 50);
 
-            let mut number: i64;
-            if step_number.checked_mul(rule_number as i64).is_none() {
-                number = 0;
+            let mut number: i64 = if step_number.checked_mul(rule_number as i64).is_none() {
+                0
             } else {
-                number = step_number * rule_number as i64;
-            }
+                step_number * rule_number as i64
+            };
 
             number = number.checked_add(start_number).unwrap_or(0);
 
