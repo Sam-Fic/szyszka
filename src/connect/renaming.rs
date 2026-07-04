@@ -1,19 +1,18 @@
-use slint::{ComponentHandle, Timer, TimerMode};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{mpsc, Arc};
-use std::time::Duration;
 
-use crate::connect::progress::{hide_overlay, show_overlay};
-use crate::connect::sync::{sync_files, sync_outdated};
+use gtk::prelude::*;
+use adw::prelude::*;
+
 use crate::files::CHARACTER;
 use crate::fls;
-use crate::slint_gen::{GuiState, MainWindow, ProgressState};
 use crate::state::SharedState;
+use crate::ui::dialogs;
+use crate::ui::state_ui::SharedGuiState;
 
-/// Number of error lines shown per page in the results dialog.
 const ERROR_PAGE_SIZE: usize = 500;
 
 struct RenameResult {
@@ -22,31 +21,41 @@ struct RenameResult {
     failed: Vec<(String, String, String)>,
 }
 
-pub fn start_renaming_request(ui: &MainWindow, state: &SharedState) {
-    let gs = ui.global::<GuiState>();
+pub fn start_renaming_request(window: &adw::ApplicationWindow, state: &SharedState, _gui_state: &SharedGuiState) {
     let state_ref = state.borrow();
 
     if state_ref.files.is_empty() {
-        gs.set_message_dialog_title(fls!("renaming_missing_files").into());
-        gs.set_message_dialog_text(fls!("renaming_require_missing_files").into());
-        gs.set_message_dialog_open(true);
+        dialogs::show_message_dialog(window, &fls!("renaming_missing_files"), &fls!("renaming_require_missing_files"));
         return;
     }
     if state_ref.rules.rules.is_empty() {
-        gs.set_message_dialog_title(fls!("renaming_missing_rules").into());
-        gs.set_message_dialog_text(fls!("renaming_require_missing_rules").into());
-        gs.set_message_dialog_open(true);
+        dialogs::show_message_dialog(window, &fls!("renaming_missing_rules"), &fls!("renaming_require_missing_rules"));
         return;
     }
 
     if !state_ref.rules.updated {
-        gs.set_outdated_warning_open(true);
+        let dialog = adw::AlertDialog::builder()
+            .heading(fls!("dialog_outdated_results"))
+            .body(fls!("renaming_some_records_not_updated"))
+            .build();
+        dialog.add_response("cancel", &crate::fls!("dialog_button_cancel"));
+        dialog.add_response("proceed", &crate::fls!("dialog_button_ok"));
+        dialog.set_response_appearance("proceed", adw::ResponseAppearance::Suggested);
+        let window_clone = window.clone();
+        let state_clone = state.clone();
+        dialog.connect_response(Some("proceed"), move |_, _| {
+            let count = state_clone.borrow().files.len() as i32;
+            dialogs::show_confirm_dialog(&window_clone, state_clone.clone(), count);
+        });
+        dialog.present(Some(window));
     } else {
-        gs.set_confirm_dialog_open(true);
+        let count = state_ref.files.len() as i32;
+        drop(state_ref);
+        dialogs::show_confirm_dialog(window, state.clone(), count);
     }
 }
 
-pub fn perform_renaming(ui: &MainWindow, state: &SharedState) {
+pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState) {
     let mut file_renames: Vec<(String, String)> = Vec::new();
     let mut folder_renames: BTreeMap<usize, Vec<(String, String)>> = BTreeMap::new();
 
@@ -65,10 +74,7 @@ pub fn perform_renaming(ui: &MainWindow, state: &SharedState) {
     }
 
     let total = file_renames.len() + folder_renames.values().map(|v| v.len()).sum::<usize>();
-    show_overlay(ui, "Renaming files…", "", false);
-    let ps = ui.global::<ProgressState>();
-    ps.set_total(total as i32);
-    ps.set_current(0);
+    log::info!("Renaming {} items", total);
 
     let counter = Arc::new(AtomicUsize::new(0));
     let counter_w = counter.clone();
@@ -99,38 +105,35 @@ pub fn perform_renaming(ui: &MainWindow, state: &SharedState) {
         });
     });
 
-    let ui_weak = ui.as_weak();
-    let state_clone = state.clone();
-    let timer = Timer::default();
     let counter_p = counter;
+    let state_clone = state.clone();
+    let window_clone = window.clone();
 
-    timer.start(TimerMode::Repeated, Duration::from_millis(60), move || {
-        let Some(ui) = ui_weak.upgrade() else {
-            return;
-        };
-
-        let ps = ui.global::<ProgressState>();
+    glib::timeout_add_local(std::time::Duration::from_millis(60), move || {
         let cur = counter_p.load(AtomicOrdering::Relaxed);
-        ps.set_current(cur as i32);
+        log::debug!("Rename progress: {}/{}", cur, total);
 
         match rx.try_recv() {
             Ok(result) => {
-                finalize_rename(&ui, &state_clone, &result);
-                // Drop the timer (held in state) to stop this repeated callback.
-                state_clone.borrow_mut().active_timer = None;
+                finalize_rename(&window_clone, &state_clone, &result);
+                state_clone.borrow_mut().async_active = false;
+                glib::ControlFlow::Break
             }
-            Err(mpsc::TryRecvError::Empty) => {}
+            Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
             Err(mpsc::TryRecvError::Disconnected) => {
-                hide_overlay(&ui);
-                state_clone.borrow_mut().active_timer = None;
+                state_clone.borrow_mut().async_active = false;
+                glib::ControlFlow::Break
             }
         }
     });
-    // Keep the timer alive so it keeps firing; the callback stops it by clearing this slot.
-    state.borrow_mut().active_timer = Some(timer);
+    state.borrow_mut().async_active = true;
 }
 
-fn finalize_rename(ui: &MainWindow, state: &SharedState, result: &RenameResult) {
+pub fn perform_renaming_gtk(window: &adw::ApplicationWindow, state: &SharedState) {
+    perform_renaming(window, state);
+}
+
+fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result: &RenameResult) {
     {
         let mut state_mut = state.borrow_mut();
         state_mut.files.clear();
@@ -138,60 +141,160 @@ fn finalize_rename(ui: &MainWindow, state: &SharedState, result: &RenameResult) 
         state_mut.result_entries.files.clear();
     }
 
-    let gs = ui.global::<GuiState>();
-    gs.set_properly_renamed(result.properly_renamed as i32);
-    gs.set_ignored_count(result.ignored as i32);
-
     {
         let text_err = fls!("renaming_error");
         let lines: Vec<String> = result.failed.iter().map(|(old, new, err)| format!("{old} -> {new}, {text_err}: {err}")).collect();
         state.borrow_mut().failed_renames = lines;
     }
-    set_failed_page(ui, state, 0);
 
-    hide_overlay(ui);
-    gs.set_results_dialog_open(true);
+    let failed_total = state.borrow().failed_renames.len();
 
-    sync_files(ui, state);
-    sync_outdated(ui, state);
-}
+    // Build results dialog
+    let dialog = adw::AlertDialog::builder()
+        .heading(fls!("dialog_results_of_renaming"))
+        .build();
 
-/// Fills the results dialog with the requested page of the stored error list.
-pub fn set_failed_page(ui: &MainWindow, state: &SharedState, page: i32) {
-    let gs = ui.global::<GuiState>();
-    let state_ref = state.borrow();
-    let lines = &state_ref.failed_renames;
-    let total = lines.len();
+    let content_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    content_box.set_margin_top(8);
+    content_box.set_margin_bottom(8);
+    content_box.set_margin_start(8);
+    content_box.set_margin_end(8);
 
-    if total == 0 {
-        gs.set_failed_text("".into());
-        gs.set_failed_total(0);
-        gs.set_failed_page(0);
-        gs.set_failed_pages(0);
-        return;
+    content_box.append(&gtk::Label::builder()
+        .label(&format!("Properly renamed: {}", result.properly_renamed))
+        .xalign(0.0)
+        .build());
+    content_box.append(&gtk::Label::builder()
+        .label(&format!("Ignored: {}", result.ignored))
+        .xalign(0.0)
+        .build());
+
+    if failed_total > 0 {
+        let err_label = gtk::Label::builder()
+            .label(&format!("Errors: {}", failed_total))
+            .xalign(0.0)
+            .build();
+        err_label.add_css_class("error");
+        content_box.append(&err_label);
+
+        // Error list with pagination
+        let page_size = 500usize;
+        let total_pages = failed_total.div_ceil(page_size);
+        let current_page = std::rc::Rc::new(std::cell::Cell::new(0usize));
+
+        let error_text_label = gtk::Label::builder()
+            .xalign(0.0)
+            .wrap(true)
+            .selectable(true)
+            .vexpand(true)
+            .build();
+        error_text_label.add_css_class("card");
+        error_text_label.set_margin_top(4);
+        error_text_label.set_margin_bottom(4);
+
+        // Load initial page
+        {
+            let lines = &state.borrow().failed_renames;
+            let end = page_size.min(failed_total);
+            error_text_label.set_label(&lines[..end].join("\n"));
+        }
+
+        let scroll = gtk::ScrolledWindow::builder()
+            .child(&error_text_label)
+            .min_content_height(200)
+            .vexpand(true)
+            .build();
+        content_box.append(&scroll);
+
+        // Pagination controls
+        if total_pages > 1 {
+            let page_box = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            page_box.set_halign(gtk::Align::Center);
+
+            let prev_btn = gtk::Button::from_icon_name("go-previous-symbolic");
+            prev_btn.set_sensitive(false);
+            let page_label = gtk::Label::new(Some(&format!("1 / {}", total_pages)));
+            let next_btn = gtk::Button::from_icon_name("go-next-symbolic");
+
+            let st = state.clone();
+            let lbl = error_text_label.clone();
+            let plbl = page_label.clone();
+            let cp = current_page.clone();
+            let prev = prev_btn.clone();
+            let nxt = next_btn.clone();
+            let tp = total_pages;
+
+            let update_page = move |page: usize| {
+                cp.set(page);
+                let lines = &st.borrow().failed_renames;
+                let start = page * page_size;
+                let end = (start + page_size).min(failed_total);
+                lbl.set_label(&lines[start..end].join("\n"));
+                plbl.set_label(&format!("{} / {}", page + 1, tp));
+                prev.set_sensitive(page > 0);
+                nxt.set_sensitive(page < tp - 1);
+            };
+
+            {
+                let cp2 = current_page.clone();
+                let update = update_page.clone();
+                prev_btn.connect_clicked(move |_| {
+                    let cur = cp2.get();
+                    if cur > 0 {
+                        update(cur - 1);
+                    }
+                });
+            }
+            {
+                let cp2 = current_page.clone();
+                let update = update_page.clone();
+                next_btn.connect_clicked(move |_| {
+                    let cur = cp2.get();
+                    if cur < tp - 1 {
+                        update(cur + 1);
+                    }
+                });
+            }
+
+            page_box.append(&prev_btn);
+            page_box.append(&page_label);
+            page_box.append(&next_btn);
+            content_box.append(&page_box);
+        }
+
+        // Copy errors button
+        let copy_btn = {
+            let btn = gtk::Button::new();
+            let content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+            content.set_halign(gtk::Align::Center);
+            content.append(&gtk::Image::from_icon_name("edit-copy-symbolic"));
+            content.append(&gtk::Label::new(Some(&crate::fls!("dialog_copy_all_errors"))));
+            btn.set_child(Some(&content));
+            btn
+        };
+        copy_btn.set_halign(gtk::Align::Start);
+        let st = state.clone();
+        copy_btn.connect_clicked(move |_| {
+            crate::connect::renaming::copy_all_errors(&st);
+        });
+        content_box.append(&copy_btn);
     }
 
-    let pages = total.div_ceil(ERROR_PAGE_SIZE);
-    let page = page.clamp(0, pages as i32 - 1);
-    let start = page as usize * ERROR_PAGE_SIZE;
-    let end = (start + ERROR_PAGE_SIZE).min(total);
-
-    gs.set_failed_text(lines[start..end].join("\n").into());
-    gs.set_failed_total(total as i32);
-    gs.set_failed_page(page);
-    gs.set_failed_pages(pages as i32);
+    dialog.set_extra_child(Some(&content_box));
+    dialog.add_response("ok", &crate::fls!("dialog_button_ok"));
+    dialog.present(Some(window));
 }
 
-/// Copies every error line (across all pages) to the system clipboard.
+pub fn set_failed_page(_state: &SharedState, _page: i32) {
+    // Handled via dialog now
+}
+
 pub fn copy_all_errors(state: &SharedState) {
     let text = state.borrow().failed_renames.join("\n");
     if text.is_empty() {
         return;
     }
 
-    // X11/Wayland clipboard ownership must be held until another app reads the content.
-    // SetExtLinux::wait() blocks the thread until that happens, so we run it in the background
-    // instead of dropping the Clipboard immediately (which loses the contents).
     std::thread::spawn(move || {
         use arboard::Clipboard;
         #[cfg(target_os = "linux")]

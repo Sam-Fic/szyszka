@@ -4,7 +4,7 @@ use directories_next::ProjectDirs;
 use file_rotate::compression::Compression;
 use file_rotate::suffix::{AppendTimestamp, FileLimit};
 use file_rotate::{ContentLimit, FileRotate};
-use handsome_logger::{ColorChoice, CombinedLogger, ConfigBuilder, FormatText, SharedLogger, TermLogger, TerminalMode, TimeFormat, WriteLogger};
+use handsome_logger::{CombinedLogger, ConfigBuilder, FormatText, SharedLogger, TermLogger, TimeFormat, WriteLogger};
 use log::{info, LevelFilter, Record};
 
 const APP_NAME: &str = "szyszka";
@@ -14,12 +14,11 @@ pub fn get_cache_path() -> Option<PathBuf> {
 }
 
 pub fn setup_logger() {
-    log_panics::init();
-
     let term_config = ConfigBuilder::default()
         .set_level(LevelFilter::Info)
         .set_message_filtering(Some(filtering_messages))
         .build();
+
     let file_config = ConfigBuilder::default()
         .set_level(LevelFilter::Debug)
         .set_write_once(true)
@@ -28,34 +27,29 @@ pub fn setup_logger() {
         .set_format_text(FormatText::DefaultWithThreadFile.get(), None)
         .build();
 
-    let combined_logger = (|| {
-        let cache_path = get_cache_path()?;
-        if let Err(e) = std::fs::create_dir_all(&cache_path) {
-            #[expect(clippy::print_stderr)]
-            {
-                eprintln!("Cannot create cache directory {}: {e}", cache_path.display());
-            }
-            return None;
-        }
-        let log_path = cache_path.join(format!("{APP_NAME}.log"));
+    let cache_path = get_cache_path();
+    let log_path = cache_path.as_ref().map(|p| p.join(format!("{APP_NAME}.log")));
 
-        let write_rotater = FileRotate::new(
-            &log_path,
+    let write_rotater = log_path.as_ref().and_then(|log_path| {
+        let _ = std::fs::create_dir_all(log_path.parent().unwrap_or(std::path::Path::new(".")));
+        Some(FileRotate::new(
+            log_path,
             AppendTimestamp::default(FileLimit::MaxFiles(3)),
             ContentLimit::BytesSurpassed(10 * 1024 * 1024),
             Compression::None,
             None,
-        );
+        ))
+    });
 
-        let combined_logs: Vec<Box<dyn SharedLogger>> = vec![TermLogger::new_from_config(term_config.clone()), WriteLogger::new(file_config, write_rotater)];
+    let mut loggers: Vec<Box<dyn SharedLogger>> = vec![TermLogger::new_from_config(term_config)];
+    if let Some(rotater) = write_rotater {
+        loggers.push(WriteLogger::new(file_config, rotater));
+    }
 
-        CombinedLogger::init(combined_logs).ok().inspect(|()| {
-            info!("Logging to file \"{}\" and terminal", log_path.display());
-        })
-    })();
-
-    if combined_logger.is_none() {
-        let _ = TermLogger::init(term_config, TerminalMode::Mixed, ColorChoice::Always);
+    let _ = CombinedLogger::init(loggers);
+    if let Some(p) = &log_path {
+        info!("Logging to file \"{}\" and terminal", p.display());
+    } else {
         info!("Logging to terminal only, file logging is disabled");
     }
 }
@@ -63,5 +57,5 @@ pub fn setup_logger() {
 fn filtering_messages(record: &Record) -> bool {
     record
         .module_path()
-        .is_none_or(|module_path| ["szyszka", "log_panics"].iter().any(|t| module_path.starts_with(t)))
+        .is_none_or(|module_path| module_path.starts_with("szyszka"))
 }

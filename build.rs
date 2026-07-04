@@ -1,3 +1,4 @@
 fn main() {
-    slint_build::compile("ui/main.slint").expect("Slint build failed");
+    // GTK4/libadwaita does not require a build script for UI compilation.
+    // UI is defined in Rust code directly.
 }

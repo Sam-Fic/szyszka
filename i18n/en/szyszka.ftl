@@ -237,6 +237,96 @@ renaming_require_missing_files = You need to use at least 1 file
 renaming_missing_rules = Missing Rules
 renaming_require_missing_rules = You need to use at least 1 rule
 
+# Menu
+menu_title = Menu
+menu_appearance = Appearance
+menu_dark_theme = Dark Theme
+menu_light_theme = Light Theme
+menu_open_rules_file = Open rules settings file
+menu_open_custom_texts_file = Open custom texts file
+menu_open_config_dir = Open config dir
+menu_open_log_folder = Open log folder
+menu_language = Language…
+
+# Dialogs
+dialog_copy_all_errors = Copy all errors
+dialog_select = Select
+dialog_select_body = Choose a selection action
+dialog_select_custom_title = Select / Unselect Custom
+dialog_select_custom_body = Usage: */folder*/* or name-version-*.txt
+dialog_select_custom_pattern = Pattern
+dialog_select_custom_include_dirs = Include directories
+dialog_select_custom_match = Match against:
+dialog_select_custom_hint = When Directory/File mode is active, pattern is ignored.
+dialog_add_folders_title = Folders to include
+dialog_add_folders_body = Configure scanning options
+dialog_save_rule_set_title = Save Rule Set
+dialog_save_rule_set_body = Choose name of rules (if exists, will override it)
+dialog_save_rule_set_name = Rule name
+dialog_saved_rule_sets = Saved rule sets
+dialog_language_title = Language
+dialog_language_body = Select application language
+dialog_language_restart_confirm = Language will change after restart. Restart now?
+dialog_language_restart = Restart
+dialog_loading = Working…
+dialog_move_up = Move Up
+dialog_move_down = Move Down
+
+# Rule editor
+rule_editor_title = Rule Editor
+rule_editor_custom_save = Save custom rule
+rule_editor_custom_saved = Saved custom texts:
+rule_editor_load = Load
+rule_editor_add = Rule Add
+rule_editor_cancel = Cancel
+rule_editor_reset = Reset to default
+rule_editor_delete = Delete
+rule_editor_tool_type = Tool Type:
+rule_editor_usage_type = Usage Type:
+rule_editor_example = EXAMPLE
+rule_editor_example_before = Before:
+rule_editor_example_after = After:
+
+# Rule tabs
+tab_custom = Custom
+tab_case_size = Upper/Lower Cases
+tab_purge = Purge
+tab_add_number = Add Number
+tab_add_text = Add Text
+tab_replace = Replace
+tab_trim = Trim
+tab_normalize = Normalize Name
+
+# Rule controls
+ctrl_lowercase = Lowercase
+ctrl_uppercase = Uppercase
+ctrl_only_name = Only Name
+ctrl_only_extension = Only Extension
+ctrl_both = Both
+ctrl_before_name = Before Name
+ctrl_after_name = After Name
+ctrl_name_start = Name Start
+ctrl_name_end = Name End
+ctrl_extension_start = Extension Start
+ctrl_extension_end = Extension End
+ctrl_case_sensitive = Case Sensitive
+ctrl_case_insensitive = Case Insensitive
+ctrl_use_regex = Use regex
+ctrl_replace_all = Replace all
+ctrl_everything = Everything
+ctrl_partial = Partial
+ctrl_start_number = Start number
+ctrl_step = Step
+ctrl_fill_zeros = Fill with zeros
+ctrl_text_to_find = Text to find
+ctrl_text_to_replace = Replaced text
+ctrl_trim_text = Trim text
+ctrl_match_against = Match against:
+
+# Status
+status_update_required = UPDATE REQUIRED
+status_up_to_date = up to date
+
 
 
 

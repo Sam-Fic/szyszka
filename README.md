@@ -2,11 +2,10 @@
 
 Szyszka is a simple but powerful and fast bulk file renamer.
 
-![Szyszka](https://github.com/qarmin/szyszka/assets/41945903/c8da9bf2-2962-46cb-a9e3-0172e2bd6033)
 ## Features
 - Great performance
 - Available for Linux, Mac and Windows
-- Gui created with GTK 4
+- GUI created with GTK 4 and libadwaita (GNOME HIG compliant)
 - Multiple rules which can be freely combined:
   - Replace text
   - Trim text
@@ -21,19 +20,26 @@ Szyszka is a simple but powerful and fast bulk file renamer.
 
 ## Requirements
 ### Linux
-You need to install GTK 4.6 (it should be available by default on most distributions), which is bundled in Ubuntu 22.04 and newer.
+You need to install GTK 4 and libadwaita development libraries.
 ```shell
-sudo apt install libgtk-4-bin
+# Ubuntu/Debian
+sudo apt install libgtk-4-dev libadwaita-1-dev
+
+# Fedora
+sudo dnf install gtk4-devel libadwaita-devel
+
+# Arch
+sudo pacman -S gtk4 libadwaita
 ```
-### MacOS (not tested)
-You need to install GTK using brew
+
+### MacOS
+You need to install GTK and libadwaita using brew:
 ```shell
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install gtk4 adwaita-icon-theme librsvg pkg-config
+brew install gtk4 libadwaita pkg-config
 ```
 
 ### Windows
-The released zip file contains all dependencies, so it work out of the box on Windows 10+;
+The released zip file contains all dependencies, so it works out of the box on Windows 10+.
 
 ## Installation
 ### Precompiled Binaries
@@ -84,4 +90,3 @@ Well... probably also not, but when you hear this name, you will instantly think
 
 ## License
 MIT
-

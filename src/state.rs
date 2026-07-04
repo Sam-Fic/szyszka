@@ -13,10 +13,8 @@ pub struct AppState {
     pub rule_selected: Vec<bool>,
     pub result_entries: ResultEntries,
     pub edit_index: Option<usize>,
-    pub active_timer: Option<slint::Timer>,
+    pub async_active: bool,
     pub pending_folders: Vec<PathBuf>,
-    /// Formatted error lines from the last rename, kept in full so the results
-    /// dialog can page through them and copy them all at once.
     pub failed_renames: Vec<String>,
 }
 

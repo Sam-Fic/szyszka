@@ -10,7 +10,7 @@ enum SearchMode {
     RecursiveSkipFolders,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CliPaths {
     pub files: Vec<PathBuf>,
     pub folders_normal: Vec<PathBuf>,

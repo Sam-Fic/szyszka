@@ -1,24 +1,22 @@
-use slint::{ComponentHandle, Timer, TimerMode};
 use std::path::PathBuf;
 use std::sync::atomic::Ordering as AtomicOrdering;
 use std::sync::{mpsc, Arc};
-use std::time::Duration;
 
 use crate::connect::progress::{hide_overlay, show_overlay};
 use crate::connect::rules_ops::refresh_outdated_or_recompute;
 use crate::connect::sync::sync_files;
 use crate::files::{collect_files_async, enumerate_folder_contents, sort_files, ItemStruct, ScanProgress};
-use crate::slint_gen::{MainWindow, ProgressState};
 use crate::state::SharedState;
+use crate::ui::state_ui::SharedGuiState;
 
-pub fn pick_files_and_add(ui: &MainWindow, state: &SharedState) {
+pub fn pick_files_and_add(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState) {
     let files = rfd::FileDialog::new().set_title("Add files").pick_files();
     let Some(files) = files else { return };
     let sorted = sort_files(files);
-    start_async_scan(ui, state, sorted, "Adding files…");
+    start_async_scan(&sorted, state, store, gui_state, "Adding files…");
 }
 
-pub fn add_cli_paths(ui: &MainWindow, state: &SharedState, paths: crate::cli_arguments::CliPaths) {
+pub fn add_cli_paths(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, paths: crate::cli_arguments::CliPaths) {
     if paths.is_empty() {
         return;
     }
@@ -36,31 +34,30 @@ pub fn add_cli_paths(ui: &MainWindow, state: &SharedState, paths: crate::cli_arg
     }
 
     if !items.is_empty() {
-        start_async_scan(ui, state, items, "Reading file metadata…");
+        start_async_scan(&items, state, store, gui_state, "Reading file metadata…");
     }
 }
 
-pub fn pick_folders_into_state(ui: &MainWindow, state: &SharedState) -> bool {
+pub fn pick_folders_into_state(state: &SharedState, gui_state: &SharedGuiState) -> bool {
     let folders = rfd::FileDialog::new().set_title("Add folders").pick_folders();
     let Some(folders) = folders else { return false };
     if folders.is_empty() {
         return false;
     }
 
-    let display: Vec<slint::SharedString> = folders.iter().map(|p| p.display().to_string().into()).collect();
-    ui.global::<crate::slint_gen::GuiState>()
-        .set_add_folder_picked_paths(slint::ModelRc::new(slint::VecModel::from(display)));
+    let display: Vec<String> = folders.iter().map(|p| p.display().to_string()).collect();
+    gui_state.borrow_mut().add_folder_picked_paths = display;
     state.borrow_mut().pending_folders = folders;
     true
 }
 
-pub fn confirm_add_folders(ui: &MainWindow, state: &SharedState, scan_inside: bool, ignore_folders: bool) {
+pub fn confirm_add_folders(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, scan_inside: bool, ignore_folders: bool) {
     let folders = std::mem::take(&mut state.borrow_mut().pending_folders);
     if folders.is_empty() {
         return;
     }
 
-    show_overlay(ui, "Scanning folders…", "Enumerating contents", true);
+    show_overlay(gui_state, "Scanning folders…", "Enumerating contents", true);
 
     let (tx, rx) = mpsc::channel::<Vec<PathBuf>>();
     std::thread::spawn(move || {
@@ -68,69 +65,54 @@ pub fn confirm_add_folders(ui: &MainWindow, state: &SharedState, scan_inside: bo
         let _ = tx.send(items);
     });
 
-    let ui_weak = ui.as_weak();
     let state_clone = state.clone();
-    let timer = Timer::default();
+    let store_clone = store.clone();
+    let gui_state_clone = gui_state.clone();
 
-    timer.start(TimerMode::Repeated, Duration::from_millis(80), move || {
-        let Some(ui) = ui_weak.upgrade() else {
-            return;
-        };
+    glib::timeout_add_local(std::time::Duration::from_millis(80), move || {
         match rx.try_recv() {
             Ok(items) => {
-                // start_async_scan installs its own timer in `active_timer`, replacing (and
-                // dropping) this one, which stops the current callback.
-                start_async_scan(&ui, &state_clone, items, "Reading file metadata…");
+                start_async_scan(&items, &state_clone, &store_clone, &gui_state_clone, "Reading file metadata…");
+                glib::ControlFlow::Break
             }
-            Err(mpsc::TryRecvError::Empty) => {}
+            Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
             Err(mpsc::TryRecvError::Disconnected) => {
-                hide_overlay(&ui);
-                state_clone.borrow_mut().active_timer = None;
+                hide_overlay(&gui_state_clone);
+                state_clone.borrow_mut().async_active = false;
+                glib::ControlFlow::Break
             }
         }
     });
-    // Keep the timer alive so it keeps firing; the callback stops it by clearing this slot.
-    state.borrow_mut().active_timer = Some(timer);
+    state.borrow_mut().async_active = true;
 }
 
-fn start_async_scan(ui: &MainWindow, state: &SharedState, items: Vec<PathBuf>, message: &str) {
+pub fn start_async_scan(items: &[PathBuf], state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, message: &str) {
     if items.is_empty() {
-        hide_overlay(ui);
+        hide_overlay(gui_state);
         return;
     }
 
-    show_overlay(ui, "Scanning…", message, false);
-    let ps = ui.global::<ProgressState>();
-    ps.set_total(items.len() as i32);
-    ps.set_current(0);
+    show_overlay(gui_state, "Scanning…", message, false);
 
     let progress = Arc::new(ScanProgress::default());
     let dedup = state.borrow().result_entries.files.clone();
     let progress_w = progress.clone();
+    let items_vec = items.to_vec();
 
     let (tx, rx) = mpsc::channel::<Vec<ItemStruct>>();
     std::thread::spawn(move || {
-        let result = collect_files_async(items, &dedup, &progress_w);
+        let result = collect_files_async(items_vec, &dedup, &progress_w);
         let _ = tx.send(result);
     });
 
-    let ui_weak = ui.as_weak();
     let state_clone = state.clone();
-    let timer = Timer::default();
+    let store_clone = store.clone();
+    let gui_state_clone = gui_state.clone();
+    let total = items.len();
 
-    timer.start(TimerMode::Repeated, Duration::from_millis(70), move || {
-        let Some(ui) = ui_weak.upgrade() else {
-            return;
-        };
-
-        let ps = ui.global::<ProgressState>();
-        let total = progress.total.load(AtomicOrdering::Relaxed);
+    glib::timeout_add_local(std::time::Duration::from_millis(70), move || {
         let current = progress.current.load(AtomicOrdering::Relaxed);
-        if total > 0 {
-            ps.set_indeterminate(false);
-            ps.set_current(current as i32);
-            ps.set_total(total as i32);
-        }
+        log::debug!("Scanning: {}/{}", current, total);
 
         match rx.try_recv() {
             Ok(result) => {
@@ -144,24 +126,24 @@ fn start_async_scan(ui: &MainWindow, state: &SharedState, items: Vec<PathBuf>, m
                     s.file_selected.resize(n, false);
                     s.rules.updated = false;
                 }
-                sync_files(&ui, &state_clone);
-                refresh_outdated_or_recompute(&ui, &state_clone);
-                hide_overlay(&ui);
-                // Drop the timer (held in state) to stop this repeated callback.
-                state_clone.borrow_mut().active_timer = None;
+                sync_files(&store_clone, &state_clone);
+                refresh_outdated_or_recompute(&store_clone, &state_clone, &gui_state_clone);
+                hide_overlay(&gui_state_clone);
+                state_clone.borrow_mut().async_active = false;
+                glib::ControlFlow::Break
             }
-            Err(mpsc::TryRecvError::Empty) => {}
+            Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
             Err(mpsc::TryRecvError::Disconnected) => {
-                hide_overlay(&ui);
-                state_clone.borrow_mut().active_timer = None;
+                hide_overlay(&gui_state_clone);
+                state_clone.borrow_mut().async_active = false;
+                glib::ControlFlow::Break
             }
         }
     });
-    // Keep the timer alive so it keeps firing; the callback stops it by clearing this slot.
-    state.borrow_mut().active_timer = Some(timer);
+    state.borrow_mut().async_active = true;
 }
 
-pub fn remove_selected(ui: &MainWindow, state: &SharedState) {
+pub fn remove_selected(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState) {
     {
         let mut state_mut = state.borrow_mut();
         let to_remove: Vec<usize> = state_mut
@@ -181,11 +163,11 @@ pub fn remove_selected(ui: &MainWindow, state: &SharedState) {
             state_mut.rules.updated = false;
         }
     }
-    sync_files(ui, state);
-    refresh_outdated_or_recompute(ui, state);
+    sync_files(store, state);
+    refresh_outdated_or_recompute(store, state, gui_state);
 }
 
-pub fn move_selected_up(ui: &MainWindow, state: &SharedState) {
+pub fn move_selected_up(state: &SharedState, store: &gio::ListStore) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -196,10 +178,10 @@ pub fn move_selected_up(ui: &MainWindow, state: &SharedState) {
             }
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
-pub fn move_selected_down(ui: &MainWindow, state: &SharedState) {
+pub fn move_selected_down(state: &SharedState, store: &gio::ListStore) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -213,7 +195,7 @@ pub fn move_selected_down(ui: &MainWindow, state: &SharedState) {
             }
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -225,7 +207,7 @@ pub enum SortKey {
     Path,
 }
 
-pub fn sort_files_by(ui: &MainWindow, state: &SharedState, key: SortKey, descending: bool) {
+pub fn sort_files_by(state: &SharedState, store: &gio::ListStore, key: SortKey, descending: bool) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -243,11 +225,7 @@ pub fn sort_files_by(ui: &MainWindow, state: &SharedState, key: SortKey, descend
                 SortKey::Future => natord::compare(&fa.future_name, &fb.future_name),
                 SortKey::Path => natord::compare(&fa.path, &fb.path).then_with(|| natord::compare(&fa.name, &fb.name)),
             };
-            if descending {
-                ord.reverse()
-            } else {
-                ord
-            }
+            if descending { ord.reverse() } else { ord }
         });
 
         let files = std::mem::take(&mut state_mut.files);
@@ -261,5 +239,5 @@ pub fn sort_files_by(ui: &MainWindow, state: &SharedState, key: SortKey, descend
         state_mut.files = new_files;
         state_mut.file_selected = new_selected;
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }

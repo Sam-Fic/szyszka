@@ -1,4 +1,3 @@
-use chrono::DateTime;
 use humansize::{format_size, BINARY};
 
 use crate::state::SharedState;
@@ -40,11 +39,4 @@ pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
 
 pub fn sync_outdated(gui_state: &SharedGuiState, state: &SharedState) {
     gui_state.borrow_mut().results_outdated = !state.borrow().rules.updated;
-}
-
-#[expect(dead_code)]
-pub fn timestamp_to_date(ts: u64) -> String {
-    DateTime::from_timestamp(ts as i64, 0)
-        .map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string())
-        .unwrap_or_default()
 }

@@ -1,41 +1,42 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use slint::{ComponentHandle, ModelRc, VecModel};
 
 use crate::config::{load_custom_rules, load_rules, save_custom_rules, save_rules_to_file};
 use crate::connect::sync::{sync_outdated, sync_rules};
 use crate::fls;
 use crate::localizer::generate_translation_hashmap;
 use crate::rule::rules::{MultipleRules, RuleData, RulePlace, RuleType, Rules, SingleRule};
-use crate::slint_gen::{Callabler, EditorState, GuiState, MainWindow, NotebookTab, RulePlaceUi, RuleSetEntry};
 use crate::state::SharedState;
+use crate::ui::state_ui::{EditorState, NotebookTab, SharedEditorState, SharedGuiState};
 
-pub fn open_editor(ui: &MainWindow, state: &SharedState, edit_index: i32) {
-    let gs = ui.global::<GuiState>();
-
-    if edit_index >= 0 {
-        let state_ref = state.borrow();
-        let idx = edit_index as usize;
-        if let Some(rule) = state_ref.rules.rules.get(idx).cloned() {
-            drop(state_ref);
-            load_rule_into_editor(ui, &rule);
-            state.borrow_mut().edit_index = Some(idx);
+pub fn open_editor(editor_state: &SharedEditorState, gui_state: &SharedGuiState, state: &SharedState, edit_index: Option<i32>) {
+    if let Some(idx) = edit_index {
+        if idx >= 0 {
+            let state_ref = state.borrow();
+            if let Some(rule) = state_ref.rules.rules.get(idx as usize).cloned() {
+                drop(state_ref);
+                load_rule_into_editor(editor_state, &rule);
+                state.borrow_mut().edit_index = Some(idx as usize);
+            }
+        } else {
+            state.borrow_mut().edit_index = None;
+            reset_editor(editor_state);
         }
     } else {
         state.borrow_mut().edit_index = None;
-        reset_editor(ui);
+        reset_editor(editor_state);
     }
-    update_example(ui, state);
-    gs.set_rule_editor_open(true);
+    update_example(editor_state, state);
+    gui_state.borrow_mut().rule_editor_open = true;
 }
 
-pub fn close_editor(ui: &MainWindow) {
-    ui.global::<GuiState>().set_rule_editor_open(false);
+pub fn close_editor(gui_state: &SharedGuiState) {
+    gui_state.borrow_mut().rule_editor_open = false;
 }
 
-pub fn add_or_update_rule(ui: &MainWindow, state: &SharedState) {
-    let single_rule = read_rule_from_editor(ui);
+pub fn add_or_update_rule(editor_state: &SharedEditorState, store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+    let single_rule = read_rule_from_editor(editor_state);
 
     {
         let mut state_mut = state.borrow_mut();
@@ -52,12 +53,12 @@ pub fn add_or_update_rule(ui: &MainWindow, state: &SharedState) {
         let new_len = state_mut.rules.rules.len();
         state_mut.rule_selected.resize(new_len, false);
     }
-    sync_rules(ui, state);
-    refresh_outdated_or_recompute(ui, state);
-    ui.global::<GuiState>().set_rule_editor_open(false);
+    sync_rules(store, state);
+    refresh_outdated_or_recompute(store, state, gui_state);
+    gui_state.borrow_mut().rule_editor_open = false;
 }
 
-pub fn remove_rule(ui: &MainWindow, state: &SharedState, idx: i32) {
+pub fn remove_rule(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         if idx < 0 {
@@ -86,11 +87,11 @@ pub fn remove_rule(ui: &MainWindow, state: &SharedState, idx: i32) {
         }
         state_mut.rules.updated = false;
     }
-    sync_rules(ui, state);
-    refresh_outdated_or_recompute(ui, state);
+    sync_rules(store, state);
+    refresh_outdated_or_recompute(store, state, gui_state);
 }
 
-pub fn move_rule_up(ui: &MainWindow, state: &SharedState) {
+pub fn move_rule_up(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -102,11 +103,11 @@ pub fn move_rule_up(ui: &MainWindow, state: &SharedState) {
             }
         }
     }
-    sync_rules(ui, state);
-    refresh_outdated_or_recompute(ui, state);
+    sync_rules(store, state);
+    refresh_outdated_or_recompute(store, state, gui_state);
 }
 
-pub fn move_rule_down(ui: &MainWindow, state: &SharedState) {
+pub fn move_rule_down(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -121,8 +122,8 @@ pub fn move_rule_down(ui: &MainWindow, state: &SharedState) {
             }
         }
     }
-    sync_rules(ui, state);
-    refresh_outdated_or_recompute(ui, state);
+    sync_rules(store, state);
+    refresh_outdated_or_recompute(store, state, gui_state);
 }
 
 fn format_captures(regex: &Regex, text: &str) -> String {
@@ -141,56 +142,64 @@ fn format_captures(regex: &Regex, text: &str) -> String {
     }
 }
 
-pub fn update_example(ui: &MainWindow, state: &SharedState) {
-    let es = ui.global::<EditorState>();
+pub fn update_example(editor_state: &SharedEditorState, state: &SharedState) {
+    let es = editor_state.borrow();
 
-    let single_rule = read_rule_from_editor(ui);
+    let single_rule = read_rule_from_editor_inner(&es);
 
     let regex = if single_rule.rule_data.use_regex {
         match Regex::new(&single_rule.rule_data.text_to_find) {
             Ok(r) => {
-                es.set_replace_invalid_regex(false);
+                drop(es);
+                editor_state.borrow_mut().replace_invalid_regex = false;
                 Some(r)
             }
             Err(_) => {
-                es.set_replace_invalid_regex(true);
-                es.set_replace_captures_text("".into());
+                drop(es);
+                let mut es_mut = editor_state.borrow_mut();
+                es_mut.replace_invalid_regex = true;
+                es_mut.replace_captures_text.clear();
                 None
             }
         }
     } else {
-        es.set_replace_invalid_regex(false);
-        es.set_replace_captures_text("".into());
+        drop(es);
+        let mut es_mut = editor_state.borrow_mut();
+        es_mut.replace_invalid_regex = false;
+        es_mut.replace_captures_text.clear();
         None
     };
 
+    let es = editor_state.borrow();
     if let Some(r) = regex.as_ref() {
-        let before = es.get_example_before_text().to_string();
-        es.set_replace_captures_text(format_captures(r, &before).into());
+        let before = es.example_before_text.clone();
+        let captures_text = format_captures(r, &before);
+        drop(es);
+        editor_state.borrow_mut().replace_captures_text = captures_text;
+    } else {
+        drop(es);
     }
 
     let mut all_rules = Rules::new();
     all_rules.rules.push(single_rule);
 
-    let before = es.get_example_before_text().to_string();
+    let es = editor_state.borrow();
+    let before = es.example_before_text.clone();
     let text = all_rules.apply_all_rules_to_item(before, 1, 1, (0, 0, 0, "Parent folder"), &[regex]);
-    es.set_example_after_text(text.into());
+    drop(es);
+    editor_state.borrow_mut().example_after_text = text;
 
-    refresh_future_names(ui, state);
+    refresh_future_names(state);
 }
 
-/// Skip auto-recompute when files * rules would freeze the UI on large datasets.
-/// Why: GTK had the same heuristic at src/update_records.rs:16. User can still
-/// trigger a manual recompute via the Update Names button.
 const RULES_UPDATE_LIMIT: usize = 20000;
 
-pub fn refresh_outdated_or_recompute(ui: &MainWindow, state: &SharedState) {
+pub fn refresh_outdated_or_recompute(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let (files_n, rules_n) = {
         let s = state.borrow();
         (s.files.len(), s.rules.rules.len())
     };
     if rules_n == 0 {
-        // No rules → future_name == name (ItemStruct init), nothing to recompute, nothing outdated.
         let mut state_mut = state.borrow_mut();
         for file in &mut state_mut.files {
             if file.future_name != file.name {
@@ -199,49 +208,48 @@ pub fn refresh_outdated_or_recompute(ui: &MainWindow, state: &SharedState) {
         }
         state_mut.rules.updated = true;
         drop(state_mut);
-        crate::connect::sync::sync_files(ui, state);
+        crate::connect::sync::sync_files(store, state);
     } else if files_n * rules_n <= RULES_UPDATE_LIMIT {
-        refresh_future_names(ui, state);
+        refresh_future_names(state);
         state.borrow_mut().rules.updated = true;
     }
-    sync_outdated(ui, state);
+    sync_outdated(gui_state, state);
 }
 
-pub fn refresh_future_names(ui: &MainWindow, state: &SharedState) {
-    {
-        let mut state_mut = state.borrow_mut();
-        let rules_clone = state_mut.rules.clone();
-        let compiled_regexes: Vec<Option<Regex>> = rules_clone
-            .rules
-            .iter()
-            .map(|r| if r.rule_data.use_regex { Regex::new(&r.rule_data.text_to_find).ok() } else { None })
-            .collect();
+pub fn refresh_future_names(state: &SharedState) {
+    let mut state_mut = state.borrow_mut();
+    let rules_clone = state_mut.rules.clone();
+    let compiled_regexes: Vec<Option<Regex>> = rules_clone
+        .rules
+        .iter()
+        .map(|r| if r.rule_data.use_regex { Regex::new(&r.rule_data.text_to_find).ok() } else { None })
+        .collect();
 
-        // Indices are 1-based and the per-folder counter resets for each distinct path, matching
-        // the original GTK behaviour so $(N) (global), $(K) (per-folder) and AddNumber stay correct.
-        let mut folder_counter: HashMap<String, u32> = HashMap::new();
-        for (idx, file) in state_mut.files.iter_mut().enumerate() {
-            let in_folder = folder_counter.entry(file.path.clone()).or_insert(0);
-            *in_folder += 1;
-            let future = rules_clone.apply_all_rules_to_item(
-                file.name.clone(),
-                (idx + 1) as u64,
-                *in_folder,
-                (file.modification_date, file.creation_date, file.size, &file.path),
-                &compiled_regexes,
-            );
-            file.future_name = future;
-        }
+    let mut folder_counter: HashMap<String, u32> = HashMap::new();
+    for (idx, file) in state_mut.files.iter_mut().enumerate() {
+        let in_folder = folder_counter.entry(file.path.clone()).or_insert(0);
+        *in_folder += 1;
+        let future = rules_clone.apply_all_rules_to_item(
+            file.name.clone(),
+            (idx + 1) as u64,
+            *in_folder,
+            (file.modification_date, file.creation_date, file.size, &file.path),
+            &compiled_regexes,
+        );
+        file.future_name = future;
     }
-    crate::connect::sync::sync_files(ui, state);
 }
 
-fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
-    let es = ui.global::<EditorState>();
+pub fn read_rule_from_editor(editor_state: &SharedEditorState) -> SingleRule {
+    let es = editor_state.borrow();
+    read_rule_from_editor_inner(&es)
+}
+
+fn read_rule_from_editor_inner(es: &EditorState) -> SingleRule {
     let mut rule_data = RuleData::new();
-    let (rule_type, rule_place, rule_description) = match es.get_current_tab() {
+    let (rule_type, rule_place, rule_description) = match es.current_tab {
         NotebookTab::Custom => {
-            rule_data.custom_text = es.get_custom_text().to_string();
+            rule_data.custom_text = es.custom_text.clone();
             let desc = fls!(
                 "rule_description_custom_rule",
                 generate_translation_hashmap(vec![("custom_rule", rule_data.custom_text.clone())])
@@ -249,8 +257,8 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
             (RuleType::Custom, RulePlace::None, desc)
         }
         NotebookTab::CaseSize => {
-            rule_data.to_lowercase = es.get_case_lowercase();
-            let place = ui_place_to_rule_place(es.get_case_place());
+            rule_data.to_lowercase = es.case_lowercase;
+            let place = es.case_place;
             let desc = if rule_data.to_lowercase {
                 format!("{} {}", fls!("rule_description_lowercase"), fls!("rule_description_text"))
             } else {
@@ -259,14 +267,14 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
             (RuleType::CaseSize, place, desc)
         }
         NotebookTab::Purge => {
-            let place = ui_place_to_rule_place(es.get_purge_place());
+            let place = es.purge_place;
             (RuleType::Purge, place, String::new())
         }
         NotebookTab::AddNumber => {
-            let place = ui_place_to_rule_place(es.get_add_number_place());
-            rule_data.number_start = es.get_add_number_start().to_string().parse::<i64>().unwrap_or(0);
-            rule_data.number_step = es.get_add_number_step().to_string().parse::<i64>().unwrap_or(1);
-            rule_data.fill_with_zeros = es.get_add_number_zeros().to_string().parse::<i64>().unwrap_or(0);
+            let place = es.add_number_place;
+            rule_data.number_start = es.add_number_start.parse::<i64>().unwrap_or(0);
+            rule_data.number_step = es.add_number_step.parse::<i64>().unwrap_or(1);
+            rule_data.fill_with_zeros = es.add_number_zeros.parse::<i64>().unwrap_or(0);
             let zeros = if rule_data.fill_with_zeros > 0 {
                 format!(
                     " {}",
@@ -289,21 +297,21 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
             (RuleType::AddNumber, place, desc)
         }
         NotebookTab::AddText => {
-            let place = ui_place_to_rule_place(es.get_add_text_place());
-            rule_data.add_text_text = es.get_add_text_text().to_string();
+            let place = es.add_text_place;
+            rule_data.add_text_text = es.add_text_text.clone();
             let desc = format!("{} {}", fls!("rule_description_added_text"), rule_data.add_text_text);
             (RuleType::AddText, place, desc)
         }
         NotebookTab::Replace => {
-            rule_data.case_sensitive = es.get_replace_case_sensitive();
-            rule_data.use_regex = es.get_replace_use_regex();
-            rule_data.regex_replace_all = es.get_replace_all_occurrences();
-            rule_data.text_to_find = es.get_replace_text_to_find().to_string();
-            rule_data.text_to_replace = es.get_replace_text_to_replace().to_string();
+            rule_data.case_sensitive = es.replace_case_sensitive;
+            rule_data.use_regex = es.replace_use_regex;
+            rule_data.regex_replace_all = es.replace_all_occurrences;
+            rule_data.text_to_find = es.replace_text_to_find.clone();
+            rule_data.text_to_replace = es.replace_text_to_replace.clone();
             let place = if rule_data.use_regex {
                 RulePlace::None
             } else {
-                ui_place_to_rule_place(es.get_replace_place())
+                es.replace_place
             };
             let additional_regex_text = if rule_data.use_regex { " regex" } else { "" };
             let desc = fls!(
@@ -317,9 +325,9 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
             (RuleType::Replace, place, desc)
         }
         NotebookTab::Trim => {
-            rule_data.case_sensitive = es.get_trim_case_sensitive();
-            rule_data.trim_text = es.get_trim_text().to_string();
-            let place = ui_place_to_rule_place(es.get_trim_place());
+            rule_data.case_sensitive = es.trim_case_sensitive;
+            rule_data.trim_text = es.trim_text.clone();
+            let place = es.trim_place;
             let where_remove = match place {
                 RulePlace::FromNameStart => fls!("rule_description_start"),
                 RulePlace::FromNameEndReverse => fls!("rule_description_end_of_name"),
@@ -334,7 +342,7 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
             (RuleType::Trim, place, desc)
         }
         NotebookTab::Normalize => {
-            rule_data.full_normalize = es.get_normalize_full();
+            rule_data.full_normalize = es.normalize_full;
             let desc = if rule_data.full_normalize {
                 fls!("rule_description_full_normalize")
             } else {
@@ -352,42 +360,8 @@ fn read_rule_from_editor(ui: &MainWindow) -> SingleRule {
     }
 }
 
-fn ui_place_to_rule_place(p: RulePlaceUi) -> RulePlace {
-    match p {
-        RulePlaceUi::NoneP => RulePlace::None,
-        RulePlaceUi::Extension => RulePlace::Extension,
-        RulePlaceUi::NameP => RulePlace::Name,
-        RulePlaceUi::ExtensionAndName => RulePlace::ExtensionAndName,
-        RulePlaceUi::BeforeExtension => RulePlace::BeforeExtension,
-        RulePlaceUi::AfterExtension => RulePlace::AfterExtension,
-        RulePlaceUi::BeforeName => RulePlace::BeforeName,
-        RulePlaceUi::AfterName => RulePlace::AfterName,
-        RulePlaceUi::FromNameStart => RulePlace::FromNameStart,
-        RulePlaceUi::FromNameEndReverse => RulePlace::FromNameEndReverse,
-        RulePlaceUi::FromExtensionStart => RulePlace::FromExtensionStart,
-        RulePlaceUi::FromExtensionEndReverse => RulePlace::FromExtensionEndReverse,
-    }
-}
-
-fn rule_place_to_ui_place(p: RulePlace) -> RulePlaceUi {
-    match p {
-        RulePlace::None => RulePlaceUi::NoneP,
-        RulePlace::Extension => RulePlaceUi::Extension,
-        RulePlace::Name => RulePlaceUi::NameP,
-        RulePlace::ExtensionAndName => RulePlaceUi::ExtensionAndName,
-        RulePlace::BeforeExtension => RulePlaceUi::BeforeExtension,
-        RulePlace::AfterExtension => RulePlaceUi::AfterExtension,
-        RulePlace::BeforeName => RulePlaceUi::BeforeName,
-        RulePlace::AfterName => RulePlaceUi::AfterName,
-        RulePlace::FromNameStart => RulePlaceUi::FromNameStart,
-        RulePlace::FromNameEndReverse => RulePlaceUi::FromNameEndReverse,
-        RulePlace::FromExtensionStart => RulePlaceUi::FromExtensionStart,
-        RulePlace::FromExtensionEndReverse => RulePlaceUi::FromExtensionEndReverse,
-    }
-}
-
-fn load_rule_into_editor(ui: &MainWindow, rule: &SingleRule) {
-    let es = ui.global::<EditorState>();
+pub fn load_rule_into_editor(editor_state: &SharedEditorState, rule: &SingleRule) {
+    let mut es = editor_state.borrow_mut();
     let tab = match rule.rule_type {
         RuleType::Custom => NotebookTab::Custom,
         RuleType::CaseSize => NotebookTab::CaseSize,
@@ -398,75 +372,54 @@ fn load_rule_into_editor(ui: &MainWindow, rule: &SingleRule) {
         RuleType::Trim => NotebookTab::Trim,
         RuleType::Normalize => NotebookTab::Normalize,
     };
-    es.set_current_tab(tab);
+    es.current_tab = tab;
 
     match rule.rule_type {
         RuleType::Custom => {
-            es.set_custom_text(rule.rule_data.custom_text.clone().into());
+            es.custom_text = rule.rule_data.custom_text.clone();
         }
         RuleType::CaseSize => {
-            es.set_case_lowercase(rule.rule_data.to_lowercase);
-            es.set_case_place(rule_place_to_ui_place(rule.rule_place));
+            es.case_lowercase = rule.rule_data.to_lowercase;
+            es.case_place = rule.rule_place;
         }
         RuleType::Purge => {
-            es.set_purge_place(rule_place_to_ui_place(rule.rule_place));
+            es.purge_place = rule.rule_place;
         }
         RuleType::AddNumber => {
-            es.set_add_number_place(rule_place_to_ui_place(rule.rule_place));
-            es.set_add_number_start(rule.rule_data.number_start.to_string().into());
-            es.set_add_number_step(rule.rule_data.number_step.to_string().into());
-            es.set_add_number_zeros(rule.rule_data.fill_with_zeros.to_string().into());
+            es.add_number_place = rule.rule_place;
+            es.add_number_start = rule.rule_data.number_start.to_string();
+            es.add_number_step = rule.rule_data.number_step.to_string();
+            es.add_number_zeros = rule.rule_data.fill_with_zeros.to_string();
         }
         RuleType::AddText => {
-            es.set_add_text_place(rule_place_to_ui_place(rule.rule_place));
-            es.set_add_text_text(rule.rule_data.add_text_text.clone().into());
+            es.add_text_place = rule.rule_place;
+            es.add_text_text = rule.rule_data.add_text_text.clone();
         }
         RuleType::Replace => {
-            es.set_replace_place(rule_place_to_ui_place(rule.rule_place));
-            es.set_replace_case_sensitive(rule.rule_data.case_sensitive);
-            es.set_replace_use_regex(rule.rule_data.use_regex);
-            es.set_replace_all_occurrences(rule.rule_data.regex_replace_all);
-            es.set_replace_text_to_find(rule.rule_data.text_to_find.clone().into());
-            es.set_replace_text_to_replace(rule.rule_data.text_to_replace.clone().into());
+            es.replace_place = rule.rule_place;
+            es.replace_case_sensitive = rule.rule_data.case_sensitive;
+            es.replace_use_regex = rule.rule_data.use_regex;
+            es.replace_all_occurrences = rule.rule_data.regex_replace_all;
+            es.replace_text_to_find = rule.rule_data.text_to_find.clone();
+            es.replace_text_to_replace = rule.rule_data.text_to_replace.clone();
         }
         RuleType::Trim => {
-            es.set_trim_place(rule_place_to_ui_place(rule.rule_place));
-            es.set_trim_case_sensitive(rule.rule_data.case_sensitive);
-            es.set_trim_text(rule.rule_data.trim_text.clone().into());
+            es.trim_place = rule.rule_place;
+            es.trim_case_sensitive = rule.rule_data.case_sensitive;
+            es.trim_text = rule.rule_data.trim_text.clone();
         }
         RuleType::Normalize => {
-            es.set_normalize_full(rule.rule_data.full_normalize);
+            es.normalize_full = rule.rule_data.full_normalize;
         }
     }
 }
 
-fn reset_editor(ui: &MainWindow) {
-    let es = ui.global::<EditorState>();
-    es.set_current_tab(NotebookTab::Custom);
-    es.set_custom_text("FILE_$(N).$(EXT)".into());
-    es.set_case_lowercase(true);
-    es.set_case_place(RulePlaceUi::NameP);
-    es.set_purge_place(RulePlaceUi::NameP);
-    es.set_add_number_place(RulePlaceUi::BeforeName);
-    es.set_add_number_start("0".into());
-    es.set_add_number_step("1".into());
-    es.set_add_number_zeros("0".into());
-    es.set_add_text_place(RulePlaceUi::BeforeName);
-    es.set_add_text_text("".into());
-    es.set_replace_place(RulePlaceUi::NameP);
-    es.set_replace_case_sensitive(false);
-    es.set_replace_use_regex(false);
-    es.set_replace_all_occurrences(true);
-    es.set_replace_text_to_find("".into());
-    es.set_replace_text_to_replace("".into());
-    es.set_trim_place(RulePlaceUi::FromNameStart);
-    es.set_trim_case_sensitive(false);
-    es.set_trim_text("".into());
-    es.set_normalize_full(true);
-    es.set_example_before_text("Gżegżółka.Txt".into());
+pub fn reset_editor(editor_state: &SharedEditorState) {
+    let mut es = editor_state.borrow_mut();
+    *es = EditorState::default();
 }
 
-pub fn save_rule_set(ui: &MainWindow, state: &SharedState, name: &str) {
+pub fn save_rule_set(state: &SharedState, name: &str) {
     if name.trim().is_empty() {
         return;
     }
@@ -479,10 +432,9 @@ pub fn save_rule_set(ui: &MainWindow, state: &SharedState, name: &str) {
         all.push(new_entry);
     }
     save_rules_to_file(&all);
-    refresh_rule_sets(ui);
 }
 
-pub fn load_rule_set(ui: &MainWindow, state: &SharedState, index: i32) {
+pub fn load_rule_set(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, index: i32) {
     if index < 0 {
         return;
     }
@@ -496,12 +448,12 @@ pub fn load_rule_set(ui: &MainWindow, state: &SharedState, index: i32) {
             state_mut.rule_selected.clear();
             state_mut.rule_selected.resize(len, false);
         }
-        sync_rules(ui, state);
-        refresh_outdated_or_recompute(ui, state);
+        sync_rules(store, state);
+        refresh_outdated_or_recompute(store, state, gui_state);
     }
 }
 
-pub fn delete_rule_set(ui: &MainWindow, index: i32) {
+pub fn delete_rule_set(index: i32) {
     if index < 0 {
         return;
     }
@@ -510,10 +462,9 @@ pub fn delete_rule_set(ui: &MainWindow, index: i32) {
         all.remove(index as usize);
         save_rules_to_file(&all);
     }
-    refresh_rule_sets(ui);
 }
 
-pub fn refresh_rule_sets(ui: &MainWindow) {
+pub fn refresh_rule_sets(gui_state: &SharedGuiState) {
     let all = load_rules();
     let names: Vec<String> = all.iter().map(|m| m.name.clone()).collect();
     let names_text = if names.is_empty() {
@@ -521,19 +472,14 @@ pub fn refresh_rule_sets(ui: &MainWindow) {
     } else {
         fls!("edit_names_used_in_rules", generate_translation_hashmap(vec![("rules", names.join(", "))]))
     };
-    ui.global::<GuiState>().set_existing_rule_set_names(names_text.into());
-
-    let entries: Vec<RuleSetEntry> = all.into_iter().map(|m| RuleSetEntry { name: m.name.into() }).collect();
-    ui.global::<Callabler>().set_saved_rule_sets(ModelRc::new(VecModel::from(entries)));
+    gui_state.borrow_mut().existing_rule_set_names = names_text;
 }
 
-pub fn refresh_custom_texts(ui: &MainWindow) {
-    let texts = load_custom_rules();
-    let model: Vec<slint::SharedString> = texts.into_iter().map(Into::into).collect();
-    ui.global::<Callabler>().set_saved_custom_rules(ModelRc::new(VecModel::from(model)));
+pub fn refresh_custom_texts() -> Vec<String> {
+    load_custom_rules()
 }
 
-pub fn save_custom_text(ui: &MainWindow, text: &str) {
+pub fn save_custom_text(text: &str) {
     if text.trim().is_empty() {
         return;
     }
@@ -542,20 +488,19 @@ pub fn save_custom_text(ui: &MainWindow, text: &str) {
         current.push(text.to_string());
         save_custom_rules(&current);
     }
-    refresh_custom_texts(ui);
 }
 
-pub fn load_custom_text_into_editor(ui: &MainWindow, index: i32) {
+pub fn load_custom_text_into_editor(editor_state: &SharedEditorState, index: i32) {
     if index < 0 {
         return;
     }
     let all = load_custom_rules();
     if let Some(text) = all.get(index as usize) {
-        ui.global::<EditorState>().set_custom_text(text.clone().into());
+        editor_state.borrow_mut().custom_text = text.clone();
     }
 }
 
-pub fn delete_custom_text(ui: &MainWindow, index: i32) {
+pub fn delete_custom_text(index: i32) {
     if index < 0 {
         return;
     }
@@ -564,5 +509,4 @@ pub fn delete_custom_text(ui: &MainWindow, index: i32) {
         all.remove(index as usize);
         save_custom_rules(&all);
     }
-    refresh_custom_texts(ui);
 }

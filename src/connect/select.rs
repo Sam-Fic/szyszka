@@ -1,9 +1,9 @@
 use crate::connect::sync::sync_files;
 use crate::files::{regex_check, CHARACTER};
-use crate::slint_gen::{MainWindow, SelectMode};
 use crate::state::SharedState;
+use crate::ui::state_ui::SelectMode;
 
-pub fn apply_select(ui: &MainWindow, state: &SharedState, mode: SelectMode) {
+pub fn apply_select(store: &gio::ListStore, state: &SharedState, mode: SelectMode) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -50,15 +50,13 @@ pub fn apply_select(ui: &MainWindow, state: &SharedState, mode: SelectMode) {
                     }
                 }
             }
-            SelectMode::SelectCustom | SelectMode::UnselectCustom => {
-                // handled by apply_select_custom
-            }
+            SelectMode::SelectCustom | SelectMode::UnselectCustom => {}
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
-pub fn file_click_select(ui: &MainWindow, state: &SharedState, idx: i32) {
+pub fn file_click_select(store: &gio::ListStore, state: &SharedState, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -70,10 +68,10 @@ pub fn file_click_select(ui: &MainWindow, state: &SharedState, idx: i32) {
             *s = true;
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
-pub fn file_click_toggle(ui: &MainWindow, state: &SharedState, idx: i32) {
+pub fn file_click_toggle(store: &gio::ListStore, state: &SharedState, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -82,10 +80,10 @@ pub fn file_click_toggle(ui: &MainWindow, state: &SharedState, idx: i32) {
             *s = !*s;
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
-pub fn file_click_range(ui: &MainWindow, state: &SharedState, anchor: i32, idx: i32) {
+pub fn file_click_range(store: &gio::ListStore, state: &SharedState, anchor: i32, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -100,10 +98,10 @@ pub fn file_click_range(ui: &MainWindow, state: &SharedState, anchor: i32, idx: 
             *s = true;
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
 
-pub fn rule_click_select(ui: &MainWindow, state: &SharedState, idx: i32) {
+pub fn rule_click_select(store: &gio::ListStore, state: &SharedState, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -115,10 +113,10 @@ pub fn rule_click_select(ui: &MainWindow, state: &SharedState, idx: i32) {
             *s = true;
         }
     }
-    crate::connect::sync::sync_rules(ui, state);
+    crate::connect::sync::sync_rules(store, state);
 }
 
-pub fn rule_click_toggle(ui: &MainWindow, state: &SharedState, idx: i32) {
+pub fn rule_click_toggle(store: &gio::ListStore, state: &SharedState, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -127,10 +125,10 @@ pub fn rule_click_toggle(ui: &MainWindow, state: &SharedState, idx: i32) {
             *s = !*s;
         }
     }
-    crate::connect::sync::sync_rules(ui, state);
+    crate::connect::sync::sync_rules(store, state);
 }
 
-pub fn rule_click_range(ui: &MainWindow, state: &SharedState, anchor: i32, idx: i32) {
+pub fn rule_click_range(store: &gio::ListStore, state: &SharedState, anchor: i32, idx: i32) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -145,13 +143,10 @@ pub fn rule_click_range(ui: &MainWindow, state: &SharedState, anchor: i32, idx: 
             *s = true;
         }
     }
-    crate::connect::sync::sync_rules(ui, state);
+    crate::connect::sync::sync_rules(store, state);
 }
 
-// Mode indexes must match the combobox order in main.slint:
-//   0 = Path, 1 = Current Name, 2 = Future Name,
-//   3 = Path + Current Name, 4 = Path + Future Name, 5 = Directory / File
-pub fn apply_select_custom(ui: &MainWindow, state: &SharedState, pattern: &str, include_dirs: bool, mode_index: i32, select: bool) {
+pub fn apply_select_custom(store: &gio::ListStore, state: &SharedState, pattern: &str, include_dirs: bool, mode_index: i32, select: bool) {
     {
         let mut state_mut = state.borrow_mut();
         let snapshot: Vec<(String, String, String, bool)> = state_mut.files.iter().map(|f| (f.path.clone(), f.name.clone(), f.future_name.clone(), f.is_dir)).collect();
@@ -161,10 +156,7 @@ pub fn apply_select_custom(ui: &MainWindow, state: &SharedState, pattern: &str, 
 
         for (idx, (path, current_name, future_name, is_dir)) in snapshot.iter().enumerate() {
             let matched = match mode_index {
-                5 => {
-                    // IsDir: pattern ignored; include_dirs decides whether to select dirs or files
-                    *is_dir == include_dirs
-                }
+                5 => *is_dir == include_dirs,
                 _ => {
                     if *is_dir && !include_dirs {
                         false
@@ -187,5 +179,5 @@ pub fn apply_select_custom(ui: &MainWindow, state: &SharedState, pattern: &str, 
             }
         }
     }
-    sync_files(ui, state);
+    sync_files(store, state);
 }
