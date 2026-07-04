@@ -34,6 +34,10 @@ tree_view_bottom_description = Description
 
 # Settings
 settings_language_label = Language
+settings_theme = Theme
+settings_theme_system = System
+settings_theme_light = Light
+settings_theme_dark = Dark
 settings_open_rules = Open rules settings file
 settings_open_cache_custom_texts = Open custom texts file
 settings_open_config_dir = Open config dir
@@ -239,6 +243,7 @@ renaming_require_missing_rules = You need to use at least 1 rule
 
 # Menu
 menu_title = Menu
+menu_preferences = Preferences
 menu_appearance = Appearance
 menu_dark_theme = Dark Theme
 menu_light_theme = Light Theme

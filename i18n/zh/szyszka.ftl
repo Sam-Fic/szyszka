@@ -34,6 +34,10 @@ tree_view_bottom_description = 描述
 
 # Settings
 settings_language_label = 语言
+settings_theme = 主题
+settings_theme_system = 跟随系统
+settings_theme_light = 浅色
+settings_theme_dark = 深色
 settings_open_rules = 打开规则设置文件
 settings_open_cache_custom_texts = 打开自定义文本文件
 settings_open_config_dir = 打开配置目录
@@ -232,6 +236,7 @@ renaming_require_missing_rules = 至少需要 1 条规则
 
 # Menu
 menu_title = 菜单
+menu_preferences = 偏好设置
 menu_appearance = 外观
 menu_dark_theme = 深色主题
 menu_light_theme = 浅色主题

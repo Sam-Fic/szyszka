@@ -299,32 +299,11 @@ pub fn show_rule_editor(
         NotebookTab::Trim => "trim", NotebookTab::Normalize => "normalize",
     });
 
-    // Example panel - GNOME standard preferences style
-    let example_outer = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    example_outer.set_margin_top(8);
-    example_outer.set_margin_bottom(8);
-    example_outer.set_margin_start(12);
-    example_outer.set_margin_end(12);
-
-    let example_frame = gtk::Frame::new(None);
-    example_frame.add_css_class("card");
-
-    let example_inner = gtk::Box::new(gtk::Orientation::Vertical, 0);
-
-    let example_title = gtk::Label::builder()
-        .label(&crate::fls!("rule_editor_example"))
-        .xalign(0.0)
-        .margin_top(8)
-        .margin_bottom(4)
-        .margin_start(12)
+    // Example panel - use adw::PreferencesGroup for native card style
+    let example_group = adw::PreferencesGroup::builder()
+        .title(&crate::fls!("rule_editor_example"))
         .build();
-    example_title.add_css_class("heading");
-    example_inner.append(&example_title);
 
-    let example_sep = gtk::Separator::new(gtk::Orientation::Horizontal);
-    example_inner.append(&example_sep);
-
-    // Before: use AdwEntryRow with title above
     let before_entry = adw::EntryRow::builder()
         .title(&crate::fls!("rule_editor_example_before"))
         .text(&editor_state.borrow().example_before_text)
@@ -349,9 +328,8 @@ pub fn show_rule_editor(
         });
     }
     before_entry.add_suffix(&reset_btn);
-    example_inner.append(&before_entry);
+    example_group.add(&before_entry);
 
-    // After: use AdwActionRow with title on left, value on right
     let after_row = adw::ActionRow::builder()
         .title(&crate::fls!("rule_editor_example_after"))
         .activatable(false)
@@ -360,10 +338,7 @@ pub fn show_rule_editor(
     after_label.set_hexpand(true);
     after_label.add_css_class("heading");
     after_row.add_suffix(&after_label);
-    example_inner.append(&after_row);
-
-    example_frame.set_child(Some(&example_inner));
-    example_outer.append(&example_frame);
+    example_group.add(&after_row);
 
     // Wire before_entry -> example
     {
@@ -376,10 +351,24 @@ pub fn show_rule_editor(
         });
     }
 
-    let page_scroll = gtk::ScrolledWindow::builder().child(&stack).hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).build();
+    // Put example_group inside a PreferencesPage so it gets same margins as other pages
+    let example_page = adw::PreferencesPage::new();
+    example_page.add(&example_group);
+
     let right_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    right_box.set_vexpand(true);
+
+    let scroll_content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    scroll_content.append(&stack);
+    scroll_content.append(&example_page);
+
+    let page_scroll = gtk::ScrolledWindow::builder()
+        .child(&scroll_content)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vexpand(true)
+        .build();
+
     right_box.append(&page_scroll);
-    right_box.append(&example_outer);
     content.append(&right_box);
 
     root.append(&header);

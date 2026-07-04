@@ -67,37 +67,18 @@ pub fn build_gtk_app(
     // Settings hamburger menu button in header
     let menu_model = gio::Menu::new();
 
-    // Helper to rebuild appearance section
-    let rebuild_menu = {
-        let menu_model = menu_model.clone();
-        move || {
-            // Remove all sections and rebuild
-            while menu_model.n_items() > 0 {
-                menu_model.remove(0);
-            }
-            let current = crate::config::load_dark_theme_config_or_create();
-            let appearance_label = if current {
-                crate::fls!("menu_light_theme")
-            } else {
-                crate::fls!("menu_dark_theme")
-            };
-            let appearance_section = gio::Menu::new();
-            appearance_section.append(Some(&appearance_label), Some("app.toggle-dark-theme"));
-            menu_model.append_section(None, &appearance_section);
+    // Preferences entry
+    let prefs_section = gio::Menu::new();
+    prefs_section.append(Some(&crate::fls!("menu_preferences")), Some("app.open-preferences"));
+    menu_model.append_section(None, &prefs_section);
 
-            let open_section = gio::Menu::new();
-            open_section.append(Some(&crate::fls!("menu_open_rules_file")), Some("app.open-rules-file"));
-            open_section.append(Some(&crate::fls!("menu_open_custom_texts_file")), Some("app.open-custom-texts-file"));
-            open_section.append(Some(&crate::fls!("menu_open_config_dir")), Some("app.open-config-dir"));
-            open_section.append(Some(&crate::fls!("menu_open_log_folder")), Some("app.open-log-folder"));
-            menu_model.append_section(None, &open_section);
-
-            let lang_section = gio::Menu::new();
-            lang_section.append(Some(&crate::fls!("menu_language")), Some("app.open-language-dialog"));
-            menu_model.append_section(None, &lang_section);
-        }
-    };
-    rebuild_menu();
+    // Open files section
+    let open_section = gio::Menu::new();
+    open_section.append(Some(&crate::fls!("menu_open_rules_file")), Some("app.open-rules-file"));
+    open_section.append(Some(&crate::fls!("menu_open_custom_texts_file")), Some("app.open-custom-texts-file"));
+    open_section.append(Some(&crate::fls!("menu_open_config_dir")), Some("app.open-config-dir"));
+    open_section.append(Some(&crate::fls!("menu_open_log_folder")), Some("app.open-log-folder"));
+    menu_model.append_section(None, &open_section);
 
     let menu_popover = gtk::PopoverMenu::from_model(Some(&menu_model));
     let menu_btn = gtk::MenuButton::new();
@@ -108,19 +89,11 @@ pub fn build_gtk_app(
 
     // Register app actions for menu items
     {
+        let w = window.clone();
         let sm = app.style_manager().clone();
-        let rebuild_menu = rebuild_menu.clone();
-        let action = gio::ActionEntry::builder("toggle-dark-theme")
+        let action = gio::ActionEntry::builder("open-preferences")
             .activate(move |_app: &adw::Application, _, _| {
-                let current = crate::config::load_dark_theme_config_or_create();
-                let new_dark = !current;
-                crate::config::save_dark_theme(new_dark);
-                if new_dark {
-                    sm.set_color_scheme(libadwaita::ColorScheme::ForceDark);
-                } else {
-                    sm.set_color_scheme(libadwaita::ColorScheme::ForceLight);
-                }
-                rebuild_menu();
+                show_preferences_dialog(&w, &sm);
             })
             .build();
         app.add_action_entries([action]);
@@ -165,15 +138,6 @@ pub fn build_gtk_app(
                     let _ = std::fs::create_dir_all(&p);
                     let _ = open::that(p);
                 }
-            })
-            .build();
-        app.add_action_entries([action]);
-    }
-    {
-        let w = window.clone();
-        let action = gio::ActionEntry::builder("open-language-dialog")
-            .activate(move |_app: &adw::Application, _, _| {
-                show_language_dialog(&w);
             })
             .build();
         app.add_action_entries([action]);
@@ -585,124 +549,92 @@ pub fn build_gtk_app(
     gtk_app
 }
 
-fn show_language_dialog(window: &adw::ApplicationWindow) {
-    let dialog = adw::Dialog::builder()
-        .title(&crate::fls!("dialog_language_title"))
-        .content_width(400)
-        .content_height(450)
+fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw::StyleManager) {
+    let dialog = adw::PreferencesDialog::new();
+
+    // Appearance page
+    let appearance_page = adw::PreferencesPage::new();
+    let appearance_group = adw::PreferencesGroup::builder()
+        .title(&crate::fls!("menu_appearance"))
         .build();
 
-    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    vbox.set_margin_top(12);
-    vbox.set_margin_bottom(12);
-    vbox.set_margin_start(12);
-    vbox.set_margin_end(12);
+    // Theme selection
+    let theme_row = adw::ComboRow::builder()
+        .title(&crate::fls!("settings_theme"))
+        .model(&gtk::StringList::new(&[
+            &crate::fls!("settings_theme_system"),
+            &crate::fls!("settings_theme_light"),
+            &crate::fls!("settings_theme_dark"),
+        ]))
+        .selected(match style_manager.color_scheme() {
+            libadwaita::ColorScheme::ForceDark => 2,
+            libadwaita::ColorScheme::ForceLight => 1,
+            _ => 0,
+        })
+        .build();
+    {
+        let sm = style_manager.clone();
+        theme_row.connect_selected_notify(move |row| {
+            let scheme = match row.selected() {
+                2 => libadwaita::ColorScheme::ForceDark,
+                1 => libadwaita::ColorScheme::ForceLight,
+                _ => libadwaita::ColorScheme::Default,
+            };
+            sm.set_color_scheme(scheme);
+            crate::config::save_dark_theme(scheme == libadwaita::ColorScheme::ForceDark);
+        });
+    }
+    appearance_group.add(&theme_row);
+    appearance_page.add(&appearance_group);
+    dialog.add(&appearance_page);
 
-    let title = gtk::Label::new(Some(&crate::fls!("dialog_language_body")));
-    title.add_css_class("title-4");
-    title.set_xalign(0.0);
-    vbox.append(&title);
+    // Language page
+    let language_page = adw::PreferencesPage::new();
+    let language_group = adw::PreferencesGroup::builder()
+        .title(&crate::fls!("settings_language_label"))
+        .build();
 
     let saved_lang = crate::config::load_saved_language();
-    let selected_lang: std::rc::Rc<std::cell::RefCell<String>> = std::rc::Rc::new(std::cell::RefCell::new(saved_lang.clone()));
-    let first_btn: std::rc::Rc<std::cell::RefCell<Option<gtk::ToggleButton>>> = std::rc::Rc::new(std::cell::RefCell::new(None));
-
-    let scroll_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    for lang in crate::language::LANGUAGES_ALL {
-        let btn = gtk::ToggleButton::with_label(lang.combo_box_text);
-        btn.set_halign(gtk::Align::Fill);
-        btn.add_css_class("flat");
-
-        if lang.combo_box_text == saved_lang {
-            btn.set_active(true);
-            btn.set_group(Some(&btn));
-            *first_btn.borrow_mut() = Some(btn.clone());
-        } else {
-            if let Some(ref first) = *first_btn.borrow() {
-                btn.set_group(Some(first));
-            }
-        }
-
-        // Track selected language
-        let sel = selected_lang.clone();
-        let name = lang.combo_box_text.to_string();
-        btn.connect_toggled(move |b| {
-            if b.is_active() {
-                *sel.borrow_mut() = name.clone();
-            }
-        });
-
-        scroll_box.append(&btn);
-    }
-
-    let scroll = gtk::ScrolledWindow::builder()
-        .child(&scroll_box)
-        .vexpand(true)
-        .min_content_height(320)
+    let lang_combo = adw::ComboRow::builder()
+        .title(&crate::fls!("settings_language_label"))
+        .model(&gtk::StringList::new(
+            &crate::language::LANGUAGES_ALL.iter().map(|l| l.combo_box_text).collect::<Vec<_>>()
+        ))
+        .selected(
+            crate::language::LANGUAGES_ALL.iter()
+                .position(|l| l.combo_box_text == saved_lang)
+                .unwrap_or(0) as u32
+        )
         .build();
-    vbox.append(&scroll);
-
-    // Cancel (left) and OK (right) - GNOME HIG standard layout
-    let btn_box = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    btn_box.set_halign(gtk::Align::Fill);
-    let cancel_btn = gtk::Button::with_label(&crate::fls!("dialog_button_cancel"));
-    let ok_btn = gtk::Button::with_label(&crate::fls!("dialog_button_ok"));
-    ok_btn.add_css_class("suggested-action");
-    btn_box.append(&cancel_btn);
-    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    spacer.set_hexpand(true);
-    btn_box.append(&spacer);
-    btn_box.append(&ok_btn);
-    vbox.append(&btn_box);
-
-    dialog.set_child(Some(&vbox));
-
-    // Cancel -> close
-    {
-        let d = dialog.clone();
-        cancel_btn.connect_clicked(move |_| { d.close(); });
-    }
-
-    // OK -> save language, confirm restart
     {
         let w = window.clone();
-        let d = dialog.clone();
-        let sel = selected_lang.clone();
-        ok_btn.connect_clicked(move |_| {
-            let lang_name = sel.borrow().clone();
-            if lang_name.is_empty() {
-                return;
-            }
-
+        lang_combo.connect_selected_notify(move |row| {
+            let lang = &crate::language::LANGUAGES_ALL[row.selected() as usize];
             let current = crate::config::load_saved_language();
-            if lang_name == current {
-                d.close();
-                return;
+            if lang.combo_box_text != current {
+                crate::config::save_language(lang.combo_box_text);
+                crate::language::apply_language(lang.combo_box_text);
+
+                let confirm = adw::AlertDialog::builder()
+                    .heading(&crate::fls!("dialog_language_title"))
+                    .body(&crate::fls!("dialog_language_restart_confirm"))
+                    .build();
+                confirm.add_response("cancel", &crate::fls!("dialog_button_cancel"));
+                confirm.add_response("restart", &crate::fls!("dialog_language_restart"));
+                confirm.set_response_appearance("restart", adw::ResponseAppearance::Suggested);
+                let w2 = w.clone();
+                confirm.connect_response(Some("restart"), move |_, _| {
+                    w2.close();
+                    let app = w2.application().unwrap();
+                    app.activate();
+                });
+                confirm.present(Some(&w));
             }
-
-            // Show restart confirmation
-            let confirm = adw::AlertDialog::builder()
-                .heading(&crate::fls!("dialog_language_title"))
-                .body(&crate::fls!("dialog_language_restart_confirm"))
-                .build();
-            confirm.add_response("cancel", &crate::fls!("dialog_button_cancel"));
-            confirm.add_response("restart", &crate::fls!("dialog_language_restart"));
-            confirm.set_response_appearance("restart", adw::ResponseAppearance::Suggested);
-
-            let w2 = w.clone();
-            let d2 = d.clone();
-            let lang = lang_name.clone();
-            confirm.connect_response(Some("restart"), move |_, _| {
-                crate::config::save_language(&lang);
-                crate::language::apply_language(&lang);
-                d2.close();
-                w2.close();
-                let app = w2.application().unwrap();
-                app.activate();
-            });
-            confirm.present(Some(&w));
         });
     }
+    language_group.add(&lang_combo);
+    language_page.add(&language_group);
+    dialog.add(&language_page);
 
     dialog.present(Some(window));
 }
