@@ -69,6 +69,8 @@ select_custom_directory_file = Directory/File
 select_custom_select_directory = Select Directory
 select_custom_unselect_directory = Unselect Directory
 
+select_custom_hint = When Directory/File mode is active, pattern is ignored.
+
 # General
 dialog_button_ok = Ok
 dialog_button_cancel = Cancel

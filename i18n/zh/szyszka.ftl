@@ -69,6 +69,8 @@ select_custom_directory_file = 目录/文件
 select_custom_select_directory = 包含目录
 select_custom_unselect_directory = 排除目录
 
+select_custom_hint = 目录/文件模式下忽略模式匹配。
+
 # General
 dialog_button_ok = 确定
 dialog_button_cancel = 取消
