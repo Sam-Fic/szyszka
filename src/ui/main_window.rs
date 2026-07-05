@@ -189,7 +189,11 @@ pub fn build_gtk_app(
     main_box.append(&file_stack);
 
     // File action bar (bottom of file list)
-    let file_action_bar = gtk::ActionBar::new();
+    let file_action_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    file_action_bar.set_margin_top(4);
+    file_action_bar.set_margin_bottom(4);
+    file_action_bar.set_margin_start(4);
+    file_action_bar.set_margin_end(4);
     let remove_btn = icon_button(&crate::fls!("upper_remove_selection_button"), "edit-delete-symbolic");
     let select_btn = icon_button(&crate::fls!("upper_select_popup_button"), "edit-select-all-symbolic");
     let update_btn = icon_button(&crate::fls!("upper_update_names_button"), "view-refresh-symbolic");
@@ -202,19 +206,18 @@ pub fn build_gtk_app(
     file_main_box.append(&remove_btn);
     file_main_box.append(&select_btn);
     file_main_box.append(&update_btn);
-    file_action_bar.pack_start(&file_main_box);
+    file_action_bar.append(&file_main_box);
     let move_up_btn = gtk::Button::from_icon_name("go-up-symbolic");
     move_up_btn.set_tooltip_text(Some("Move Up"));
     move_up_btn.set_hexpand(false);
     let move_down_btn = gtk::Button::from_icon_name("go-down-symbolic");
     move_down_btn.set_tooltip_text(Some("Move Down"));
     move_down_btn.set_hexpand(false);
-    file_action_bar.pack_end(&move_down_btn);
-    file_action_bar.pack_end(&move_up_btn);
+    let move_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    move_box.append(&move_up_btn);
+    move_box.append(&move_down_btn);
+    file_action_bar.append(&move_box);
     main_box.append(&file_action_bar);
-
-    // Separator
-    main_box.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
     // Rule status label
     let rule_status = gtk::Label::builder().label(&crate::fls!("bottom_rule_label_rules")).xalign(0.0).build();
@@ -249,7 +252,11 @@ pub fn build_gtk_app(
     main_box.append(&rule_stack);
 
     // Rule action bar (bottom of rule list)
-    let rule_action_bar = gtk::ActionBar::new();
+    let rule_action_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    rule_action_bar.set_margin_top(4);
+    rule_action_bar.set_margin_bottom(4);
+    rule_action_bar.set_margin_start(4);
+    rule_action_bar.set_margin_end(4);
     let add_rule_btn = icon_button(&crate::fls!("bottom_rule_add_button"), "list-add-symbolic");
     let edit_rule_btn = icon_button(&crate::fls!("bottom_rule_edit_button"), "document-edit-symbolic");
     let remove_rule_btn = icon_button(&crate::fls!("bottom_rule_remove_button"), "list-remove-symbolic");
@@ -269,9 +276,11 @@ pub fn build_gtk_app(
     rule_main_box.append(&remove_rule_btn);
     rule_main_box.append(&load_rules_btn);
     rule_main_box.append(&save_rules_btn);
-    rule_action_bar.pack_start(&rule_main_box);
-    rule_action_bar.pack_end(&rule_down_btn);
-    rule_action_bar.pack_end(&rule_up_btn);
+    rule_action_bar.append(&rule_main_box);
+    let rule_move_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    rule_move_box.append(&rule_up_btn);
+    rule_move_box.append(&rule_down_btn);
+    rule_action_bar.append(&rule_move_box);
     main_box.append(&rule_action_bar);
 
     toolbar_view.set_content(Some(&main_box));
