@@ -13,11 +13,10 @@ use super::translations_ui::Translations;
 fn icon_button(label: &str, icon: &str) -> gtk::Button {
     let btn = gtk::Button::new();
     btn.set_hexpand(true);
-    let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     content.set_halign(gtk::Align::Center);
     let img = gtk::Image::from_icon_name(icon);
     img.set_pixel_size(16);
-    img.set_margin_start(4);
     content.append(&img);
     let label_widget = gtk::Label::new(Some(label));
     label_widget.set_xalign(0.5);
@@ -34,9 +33,7 @@ pub struct GtkApp {
     pub rule_status_label: gtk::Label,
     pub start_button: gtk::Button,
     pub update_button: gtk::Button,
-    pub progress_banner: gtk::Revealer,
-    pub progress_spinner: gtk::Spinner,
-    pub progress_label: gtk::Label,
+    pub progress_banner: adw::Banner,
     pub translations: Rc<RefCell<Translations>>,
     pub editor_state: SharedEditorState,
     pub gui_state: SharedGuiState,
@@ -69,8 +66,8 @@ pub fn build_gtk_app(
 
     let add_files_btn = icon_button(&crate::fls!("upper_add_files_button"), "document-open-symbolic");
     let add_folders_btn = icon_button(&crate::fls!("upper_add_folders_button"), "folder-open-symbolic");
-    header.pack_end(&add_folders_btn);
-    header.pack_end(&add_files_btn);
+    header.pack_start(&add_files_btn);
+    header.pack_start(&add_folders_btn);
 
     // Hamburger menu
     let menu_model = gio::Menu::new();
@@ -147,22 +144,8 @@ pub fn build_gtk_app(
     let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
     // Progress banner
-    let progress_banner = gtk::Revealer::builder()
-        .transition_type(gtk::RevealerTransitionType::SlideDown)
-        .reveal_child(false)
-        .build();
-    let progress_inner = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    progress_inner.set_margin_top(4);
-    progress_inner.set_margin_bottom(4);
-    progress_inner.set_margin_start(8);
-    progress_inner.set_margin_end(8);
-    let progress_spinner = gtk::Spinner::new();
-    progress_spinner.set_size_request(16, 16);
-    progress_inner.append(&progress_spinner);
-    let progress_label = gtk::Label::builder().label(&crate::fls!("dialog_loading")).hexpand(true).xalign(0.0).build();
-    progress_inner.append(&progress_label);
-    progress_banner.set_child(Some(&progress_inner));
-    progress_banner.add_css_class("toolbar");
+    let progress_banner = adw::Banner::new(&crate::fls!("dialog_loading"));
+    progress_banner.set_revealed(false);
     main_box.append(&progress_banner);
 
     // File status label
@@ -182,9 +165,14 @@ pub fn build_gtk_app(
         .icon_name("folder-documents-symbolic")
         .title(&crate::fls!("empty_state_files_title"))
         .description(&crate::fls!("empty_state_files_description"))
+        .valign(gtk::Align::Center)
+        .hexpand(true)
+        .vexpand(true)
         .build();
 
     let file_stack = gtk::Stack::new();
+    file_stack.set_vexpand(true);
+    file_stack.set_overflow(gtk::Overflow::Hidden);
     file_stack.add_named(&file_scroll, Some("list"));
     file_stack.add_named(&file_empty_page, Some("empty"));
     file_stack.set_visible_child_name("empty");
@@ -196,7 +184,7 @@ pub fn build_gtk_app(
     let select_btn = icon_button(&crate::fls!("upper_select_popup_button"), "edit-select-all-symbolic");
     let update_btn = icon_button(&crate::fls!("upper_update_names_button"), "view-refresh-symbolic");
     update_btn.set_sensitive(false);
-    let file_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let file_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
     file_main_box.set_homogeneous(true);
     file_main_box.set_hexpand(true);
     file_main_box.append(&remove_btn);
@@ -236,9 +224,14 @@ pub fn build_gtk_app(
         .icon_name("text-x-generic-symbolic")
         .title(&crate::fls!("empty_state_rules_title"))
         .description(&crate::fls!("empty_state_rules_description"))
+        .valign(gtk::Align::Center)
+        .hexpand(true)
+        .vexpand(true)
         .build();
 
     let rule_stack = gtk::Stack::new();
+    rule_stack.set_vexpand(true);
+    rule_stack.set_overflow(gtk::Overflow::Hidden);
     rule_stack.add_named(&rule_scroll, Some("list"));
     rule_stack.add_named(&rule_empty_page, Some("empty"));
     rule_stack.set_visible_child_name("empty");
@@ -257,7 +250,7 @@ pub fn build_gtk_app(
     rule_down_btn.set_hexpand(false);
     let load_rules_btn = icon_button(&crate::fls!("bottom_rule_load_rules_button"), "document-open-symbolic");
     let save_rules_btn = icon_button(&crate::fls!("bottom_rule_save_rules_button"), "document-save-symbolic");
-    let rule_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let rule_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
     rule_main_box.set_homogeneous(true);
     rule_main_box.set_hexpand(true);
     rule_main_box.append(&add_rule_btn);
@@ -282,8 +275,6 @@ pub fn build_gtk_app(
         start_button: start_btn.clone(),
         update_button: update_btn.clone(),
         progress_banner: progress_banner.clone(),
-        progress_spinner: progress_spinner.clone(),
-        progress_label: progress_label.clone(),
         translations: translations.clone(),
         editor_state: editor_state.clone(),
         gui_state: gui_state.clone(),
@@ -300,8 +291,6 @@ pub fn build_gtk_app(
         let start_btn_c = start_btn.clone();
         let update_btn_c = update_btn.clone();
         let pb = progress_banner.clone();
-        let ps = progress_spinner.clone();
-        let pl = progress_label.clone();
         let file_stack_c = file_stack.clone();
         let rule_stack_c = rule_stack.clone();
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
@@ -318,21 +307,18 @@ pub fn build_gtk_app(
             }
             start_btn_c.set_sensitive(file_count > 0 && rule_count > 0);
             update_btn_c.set_sensitive(file_count > 0);
-            // Switch file stack
             file_stack_c.set_visible_child_name(if file_count > 0 { "list" } else { "empty" });
-            // Switch rule stack
             if rule_count > 0 {
                 rule_status_c.set_label(&format!("{} ({})", t.bottom_rule_label_rules, rule_count));
             } else {
                 rule_status_c.set_label(&t.bottom_rule_label_rules);
             }
             rule_stack_c.set_visible_child_name(if rule_count > 0 { "list" } else { "empty" });
-            // Progress banner
-            let active = gs.borrow().message_dialog_title.len() > 0;
-            pb.set_reveal_child(active);
+            let title = gs.borrow().message_dialog_title.clone();
+            let active = !title.is_empty();
+            pb.set_revealed(active);
             if active {
-                ps.set_spinning(active);
-                pl.set_label(&gs.borrow().message_dialog_title);
+                pb.set_title(&title);
             }
             glib::ControlFlow::Continue
         });
