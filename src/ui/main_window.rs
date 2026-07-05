@@ -55,9 +55,17 @@ pub fn build_gtk_app(
         .height_request(600)
         .build();
 
-    // Custom CSS for green future name highlighting
+    // Custom CSS for green future name highlighting and selection styling
     let css_provider = gtk::CssProvider::new();
-    css_provider.load_from_data(".future-name-changed { color: #2e8b57; }");
+    css_provider.load_from_data(
+        ".future-name-changed { color: #2e8b57; }
+         columnview > listview > row:selected {
+             background: @accent_bg_color;
+         }
+         columnview > listview > row:selected label {
+             color: @accent_fg_color;
+         }"
+    );
     // Will be added to display after window is realized
 
     let toolbar_view = adw::ToolbarView::new();
