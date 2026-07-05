@@ -164,7 +164,6 @@ pub fn build_gtk_app(
     let file_empty_page = adw::StatusPage::builder()
         .icon_name("folder-documents-symbolic")
         .title(&crate::fls!("empty_state_files_title"))
-        .description(&crate::fls!("empty_state_files_description"))
         .valign(gtk::Align::Center)
         .hexpand(true)
         .vexpand(true)
@@ -223,7 +222,6 @@ pub fn build_gtk_app(
     let rule_empty_page = adw::StatusPage::builder()
         .icon_name("text-x-generic-symbolic")
         .title(&crate::fls!("empty_state_rules_title"))
-        .description(&crate::fls!("empty_state_rules_description"))
         .valign(gtk::Align::Center)
         .hexpand(true)
         .vexpand(true)
@@ -539,6 +537,7 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
 
     let appearance_page = adw::PreferencesPage::new();
     appearance_page.set_icon_name(Some("preferences-desktop-appearance-symbolic"));
+    appearance_page.set_title(&crate::fls!("menu_appearance"));
     let appearance_group = adw::PreferencesGroup::builder().title(&crate::fls!("menu_appearance")).build();
     let theme_row = adw::ComboRow::builder()
         .title(&crate::fls!("settings_theme"))
@@ -571,6 +570,7 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
 
     let language_page = adw::PreferencesPage::new();
     language_page.set_icon_name(Some("preferences-desktop-locale-symbolic"));
+    language_page.set_title(&crate::fls!("settings_language_label"));
     let language_group = adw::PreferencesGroup::builder().title(&crate::fls!("settings_language_label")).build();
     let saved_lang = crate::config::load_saved_language();
     let lang_combo = adw::ComboRow::builder()

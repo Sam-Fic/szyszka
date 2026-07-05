@@ -104,6 +104,8 @@ pub fn show_rule_editor(
     let after_label = gtk::Label::builder().hexpand(true).xalign(0.0).build();
     { let es = editor_state.borrow(); after_label.set_text(&es.example_after_text); }
 
+    let after_label_ref = after_label.clone();
+
     // Custom tab
     {
         let page = adw::PreferencesPage::new();
@@ -128,10 +130,13 @@ pub fn show_rule_editor(
             .hexpand(true)
             .valign(gtk::Align::Center)
             .build();
+        let suppress_change = std::rc::Rc::new(std::cell::Cell::new(false));
         {
             let es = editor_state.clone();
             let lbl = after_label.clone();
+            let sc = suppress_change.clone();
             entry.connect_changed(move |e| {
+                if sc.get() { return; }
                 es.borrow_mut().custom_text = e.text().to_string();
                 crate::connect::rules_ops::update_example(&es, &SharedState::default());
                 lbl.set_text(&es.borrow().example_after_text);
@@ -147,6 +152,8 @@ pub fn show_rule_editor(
         let refresh_saved_list = {
             let saved_list_box = saved_list_box.clone();
             let es = editor_state.clone();
+            let entry = entry.clone();
+            let lbl = after_label_ref.clone();
             move || {
                 while let Some(child) = saved_list_box.first_child() {
                     saved_list_box.remove(&child);
@@ -160,8 +167,20 @@ pub fn show_rule_editor(
                     load_btn.add_css_class("flat");
                     load_btn.set_tooltip_text(Some(&crate::fls!("rule_editor_load")));
                     let es2 = es.clone();
+                    let entry2 = entry.clone();
+                    let lbl2 = lbl.clone();
+                    let sc = suppress_change.clone();
                     let i = idx as i32;
-                    load_btn.connect_clicked(move |_| crate::connect::rules_ops::load_custom_text_into_editor(&es2, i));
+                    load_btn.connect_clicked(move |_| {
+                        crate::connect::rules_ops::load_custom_text_into_editor(&es2, i);
+                        let text = es2.borrow().custom_text.clone();
+                        sc.set(true);
+                        entry2.set_text(&text);
+                        sc.set(false);
+                        crate::connect::rules_ops::update_example(&es2, &SharedState::default());
+                        let after = es2.borrow().example_after_text.clone();
+                        lbl2.set_text(&after);
+                    });
                     row.add_suffix(&load_btn);
                     let del_btn = gtk::Button::from_icon_name("user-trash-symbolic");
                     del_btn.set_size_request(32, 32);
