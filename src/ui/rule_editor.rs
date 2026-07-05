@@ -60,6 +60,7 @@ pub fn show_rule_editor(
     editor_state: &SharedEditorState,
     state: &SharedState,
     rule_store: &gio::ListStore,
+    file_store: &gio::ListStore,
     gui_state: &SharedGuiState,
     edit_index: Option<i32>,
 ) {
@@ -399,7 +400,7 @@ pub fn show_rule_editor(
     { let gs = gui_state.clone(); let d = editor_dialog.clone(); cancel_btn.connect_clicked(move |_| { crate::connect::rules_ops::close_editor(&gs); d.close(); }); }
 
     // Add
-    { let state = state.clone(); let rstore = rule_store.clone(); let gs = gui_state.clone(); let d = editor_dialog.clone(); let es = editor_state.clone(); add_btn.connect_clicked(move |_| { crate::connect::rules_ops::add_or_update_rule(&es, &rstore, &state, &gs); d.close(); }); }
+    { let state = state.clone(); let rstore = rule_store.clone(); let fstore = file_store.clone(); let gs = gui_state.clone(); let d = editor_dialog.clone(); let es = editor_state.clone(); add_btn.connect_clicked(move |_| { crate::connect::rules_ops::add_or_update_rule(&es, &rstore, &fstore, &state, &gs); d.close(); }); }
 
     editor_dialog.present(Some(window));
 }

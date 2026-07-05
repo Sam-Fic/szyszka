@@ -12,13 +12,14 @@ use super::translations_ui::Translations;
 
 fn icon_button(label: &str, icon: &str) -> gtk::Button {
     let btn = gtk::Button::new();
+    btn.set_hexpand(true);
     let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    content.set_halign(gtk::Align::Center);
     let img = gtk::Image::from_icon_name(icon);
     img.set_pixel_size(16);
     img.set_margin_start(4);
     content.append(&img);
     let label_widget = gtk::Label::new(Some(label));
-    label_widget.set_hexpand(true);
     label_widget.set_xalign(0.5);
     content.append(&label_widget);
     btn.set_child(Some(&content));
@@ -195,15 +196,21 @@ pub fn build_gtk_app(
     let select_btn = icon_button(&crate::fls!("upper_select_popup_button"), "edit-select-all-symbolic");
     let update_btn = icon_button(&crate::fls!("upper_update_names_button"), "view-refresh-symbolic");
     update_btn.set_sensitive(false);
+    let file_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    file_main_box.set_homogeneous(true);
+    file_main_box.set_hexpand(true);
+    file_main_box.append(&remove_btn);
+    file_main_box.append(&select_btn);
+    file_main_box.append(&update_btn);
+    file_action_bar.pack_start(&file_main_box);
     let move_up_btn = gtk::Button::from_icon_name("go-up-symbolic");
     move_up_btn.set_tooltip_text(Some("Move Up"));
+    move_up_btn.set_hexpand(false);
     let move_down_btn = gtk::Button::from_icon_name("go-down-symbolic");
     move_down_btn.set_tooltip_text(Some("Move Down"));
-    file_action_bar.pack_start(&remove_btn);
-    file_action_bar.pack_start(&select_btn);
+    move_down_btn.set_hexpand(false);
     file_action_bar.pack_end(&move_down_btn);
     file_action_bar.pack_end(&move_up_btn);
-    file_action_bar.pack_end(&update_btn);
     main_box.append(&file_action_bar);
 
     // Separator
@@ -221,7 +228,7 @@ pub fn build_gtk_app(
     let rule_store = gio::ListStore::new::<RuleRow>();
     let rule_selection = gtk::MultiSelection::new(Some(rule_store.clone()));
     state.borrow_mut().rule_selection = Some(rule_selection.clone());
-    let rule_column_view = build_rule_column_view(&rule_selection, &state, &editor_state, &rule_store, &gui_state, &window);
+    let rule_column_view = build_rule_column_view(&rule_selection, &state, &editor_state, &rule_store, &file_store, &gui_state, &window);
     let rule_scroll = gtk::ScrolledWindow::builder().child(&rule_column_view).vexpand(true).build();
     rule_scroll.add_css_class("card");
 
@@ -244,15 +251,21 @@ pub fn build_gtk_app(
     let remove_rule_btn = icon_button(&crate::fls!("bottom_rule_remove_button"), "list-remove-symbolic");
     let rule_up_btn = gtk::Button::from_icon_name("go-up-symbolic");
     rule_up_btn.set_tooltip_text(Some("Move Up"));
+    rule_up_btn.set_hexpand(false);
     let rule_down_btn = gtk::Button::from_icon_name("go-down-symbolic");
     rule_down_btn.set_tooltip_text(Some("Move Down"));
+    rule_down_btn.set_hexpand(false);
     let load_rules_btn = icon_button(&crate::fls!("bottom_rule_load_rules_button"), "document-open-symbolic");
     let save_rules_btn = icon_button(&crate::fls!("bottom_rule_save_rules_button"), "document-save-symbolic");
-    rule_action_bar.pack_start(&add_rule_btn);
-    rule_action_bar.pack_start(&edit_rule_btn);
-    rule_action_bar.pack_start(&remove_rule_btn);
-    rule_action_bar.pack_end(&save_rules_btn);
-    rule_action_bar.pack_end(&load_rules_btn);
+    let rule_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    rule_main_box.set_homogeneous(true);
+    rule_main_box.set_hexpand(true);
+    rule_main_box.append(&add_rule_btn);
+    rule_main_box.append(&edit_rule_btn);
+    rule_main_box.append(&remove_rule_btn);
+    rule_main_box.append(&load_rules_btn);
+    rule_main_box.append(&save_rules_btn);
+    rule_action_bar.pack_start(&rule_main_box);
     rule_action_bar.pack_end(&rule_down_btn);
     rule_action_bar.pack_end(&rule_up_btn);
     main_box.append(&rule_action_bar);
@@ -415,8 +428,9 @@ pub fn build_gtk_app(
         let state = state.clone();
         let rule_store = rule_store.clone();
         let gs = gui_state.clone();
+        let file_store_c = file_store.clone();
         add_rule_btn.connect_clicked(move |_| {
-            super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &gs, None);
+            super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &file_store_c, &gs, None);
         });
     }
     {
@@ -425,33 +439,37 @@ pub fn build_gtk_app(
         let state = state.clone();
         let rule_store = rule_store.clone();
         let gs = gui_state.clone();
+        let file_store_c = file_store.clone();
         edit_rule_btn.connect_clicked(move |_| {
             let idx = state.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(-1);
-            super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &gs, Some(idx));
+            super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &file_store_c, &gs, Some(idx));
         });
     }
     {
         let rule_store = rule_store.clone();
         let state = state.clone();
         let gs = gui_state.clone();
+        let file_store_c = file_store.clone();
         remove_rule_btn.connect_clicked(move |_| {
-            crate::connect::rules_ops::remove_rule(&rule_store, &state, &gs, -1);
+            crate::connect::rules_ops::remove_rule(&rule_store, &file_store_c, &state, &gs, -1);
         });
     }
     {
         let rule_store = rule_store.clone();
         let state = state.clone();
         let gs = gui_state.clone();
+        let file_store_c = file_store.clone();
         rule_up_btn.connect_clicked(move |_| {
-            crate::connect::rules_ops::move_rule_up(&rule_store, &state, &gs);
+            crate::connect::rules_ops::move_rule_up(&rule_store, &file_store_c, &state, &gs);
         });
     }
     {
         let rule_store = rule_store.clone();
         let state = state.clone();
         let gs = gui_state.clone();
+        let file_store_c = file_store.clone();
         rule_down_btn.connect_clicked(move |_| {
-            crate::connect::rules_ops::move_rule_down(&rule_store, &state, &gs);
+            crate::connect::rules_ops::move_rule_down(&rule_store, &file_store_c, &state, &gs);
         });
     }
     {
@@ -483,6 +501,7 @@ pub fn build_gtk_app(
         let rule_store = rule_store.clone();
         let gs = gui_state.clone();
         let window = window.clone();
+        let file_store_c = file_store.clone();
         load_rules_btn.connect_clicked(move |_| {
             let all = crate::config::load_rules();
             if all.is_empty() {
@@ -502,10 +521,10 @@ pub fn build_gtk_app(
                 let row = adw::ActionRow::builder().title(&entry.name).activatable(false).build();
                 let load_btn = gtk::Button::with_label(&crate::fls!("rule_editor_load"));
                 load_btn.add_css_class("flat"); load_btn.add_css_class("suggested-action");
-                let st = state.clone(); let store2 = rule_store.clone();
+                let st = state.clone(); let store2 = rule_store.clone(); let fs = file_store_c.clone();
                 let gs2 = gs.clone(); let d = dialog.clone(); let idx = i as i32;
                 load_btn.connect_clicked(move |_| {
-                    crate::connect::rules_ops::load_rule_set(&store2, &st, &gs2, idx);
+                    crate::connect::rules_ops::load_rule_set(&store2, &fs, &st, &gs2, idx);
                     d.close();
                 });
                 row.add_suffix(&load_btn);
@@ -762,7 +781,7 @@ fn build_file_column_view(state: &SharedState, _window: &adw::ApplicationWindow)
     (column_view, file_store, selection)
 }
 
-fn build_rule_column_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> gtk::ColumnView {
+fn build_rule_column_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, file_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> gtk::ColumnView {
     let column_view = gtk::ColumnView::new(Some(selection.clone()));
     column_view.set_show_row_separators(true);
     column_view.set_show_column_separators(true);
@@ -793,10 +812,10 @@ fn build_rule_column_view(selection: &gtk::MultiSelection, state: &SharedState, 
     desc_col.set_expand(true); column_view.append_column(&desc_col);
     // Double-click to edit rule
     { let st = state.clone(); let es = editor_state.clone(); let rs = rule_store.clone();
-      let gs = gui_state.clone(); let w = window.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
+      let fs = file_store.clone(); let gs = gui_state.clone(); let w = window.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
       gesture.connect_released(move |_, n_press, _, _| { if n_press >= 2 {
           let idx = st.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(0);
-          super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &gs, Some(idx));
+          super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &fs, &gs, Some(idx));
       }}); column_view.add_controller(gesture); }
     column_view
 }

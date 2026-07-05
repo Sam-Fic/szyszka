@@ -35,7 +35,7 @@ pub fn close_editor(gui_state: &SharedGuiState) {
     gui_state.borrow_mut().rule_editor_open = false;
 }
 
-pub fn add_or_update_rule(editor_state: &SharedEditorState, store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+pub fn add_or_update_rule(editor_state: &SharedEditorState, store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let single_rule = read_rule_from_editor(editor_state);
 
     {
@@ -54,11 +54,11 @@ pub fn add_or_update_rule(editor_state: &SharedEditorState, store: &gio::ListSto
         state_mut.rule_selected.resize(new_len, false);
     }
     sync_rules(store, state);
-    refresh_outdated_or_recompute(store, state, gui_state);
+    refresh_outdated_or_recompute(file_store, state, gui_state);
     gui_state.borrow_mut().rule_editor_open = false;
 }
 
-pub fn remove_rule(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, idx: i32) {
+pub fn remove_rule(store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, idx: i32) {
     let sel = state.borrow().rule_selection.clone();
     if let Some(sel) = &sel {
         crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
@@ -92,10 +92,10 @@ pub fn remove_rule(store: &gio::ListStore, state: &SharedState, gui_state: &Shar
         state_mut.rules.updated = false;
     }
     sync_rules(store, state);
-    refresh_outdated_or_recompute(store, state, gui_state);
+    refresh_outdated_or_recompute(file_store, state, gui_state);
 }
 
-pub fn move_rule_up(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+pub fn move_rule_up(store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let sel = state.borrow().rule_selection.clone();
     if let Some(sel) = &sel {
         crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
@@ -112,10 +112,10 @@ pub fn move_rule_up(store: &gio::ListStore, state: &SharedState, gui_state: &Sha
         }
     }
     sync_rules(store, state);
-    refresh_outdated_or_recompute(store, state, gui_state);
+    refresh_outdated_or_recompute(file_store, state, gui_state);
 }
 
-pub fn move_rule_down(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+pub fn move_rule_down(store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let sel = state.borrow().rule_selection.clone();
     if let Some(sel) = &sel {
         crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
@@ -135,7 +135,7 @@ pub fn move_rule_down(store: &gio::ListStore, state: &SharedState, gui_state: &S
         }
     }
     sync_rules(store, state);
-    refresh_outdated_or_recompute(store, state, gui_state);
+    refresh_outdated_or_recompute(file_store, state, gui_state);
 }
 
 fn format_captures(regex: &Regex, text: &str) -> String {
@@ -206,7 +206,7 @@ pub fn update_example(editor_state: &SharedEditorState, state: &SharedState) {
 
 const RULES_UPDATE_LIMIT: usize = 20000;
 
-pub fn refresh_outdated_or_recompute(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+pub fn refresh_outdated_or_recompute(file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let (files_n, rules_n) = {
         let s = state.borrow();
         (s.files.len(), s.rules.rules.len())
@@ -220,10 +220,11 @@ pub fn refresh_outdated_or_recompute(store: &gio::ListStore, state: &SharedState
         }
         state_mut.rules.updated = true;
         drop(state_mut);
-        crate::connect::sync::sync_files(store, state);
+        crate::connect::sync::sync_files(file_store, state);
     } else if files_n * rules_n <= RULES_UPDATE_LIMIT {
         refresh_future_names(state);
         state.borrow_mut().rules.updated = true;
+        crate::connect::sync::sync_files(file_store, state);
     }
     sync_outdated(gui_state, state);
 }
@@ -446,7 +447,7 @@ pub fn save_rule_set(state: &SharedState, name: &str) {
     save_rules_to_file(&all);
 }
 
-pub fn load_rule_set(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, index: i32) {
+pub fn load_rule_set(store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, index: i32) {
     if index < 0 {
         return;
     }
@@ -461,7 +462,7 @@ pub fn load_rule_set(store: &gio::ListStore, state: &SharedState, gui_state: &Sh
             state_mut.rule_selected.resize(len, false);
         }
         sync_rules(store, state);
-        refresh_outdated_or_recompute(store, state, gui_state);
+        refresh_outdated_or_recompute(file_store, state, gui_state);
     }
 }
 
