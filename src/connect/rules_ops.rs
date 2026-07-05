@@ -59,6 +59,10 @@ pub fn add_or_update_rule(editor_state: &SharedEditorState, store: &gio::ListSto
 }
 
 pub fn remove_rule(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState, idx: i32) {
+    let sel = state.borrow().rule_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         if idx < 0 {
@@ -92,6 +96,10 @@ pub fn remove_rule(store: &gio::ListStore, state: &SharedState, gui_state: &Shar
 }
 
 pub fn move_rule_up(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+    let sel = state.borrow().rule_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();
@@ -108,6 +116,10 @@ pub fn move_rule_up(store: &gio::ListStore, state: &SharedState, gui_state: &Sha
 }
 
 pub fn move_rule_down(store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
+    let sel = state.borrow().rule_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_rule_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.rules.rules.len();

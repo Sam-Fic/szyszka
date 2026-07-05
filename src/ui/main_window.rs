@@ -172,13 +172,22 @@ pub fn build_gtk_app(
     file_status.set_margin_bottom(4);
     main_box.append(&file_status);
 
-    // File list
-    let file_store = gio::ListStore::new::<FileRow>();
-    let file_selection = gtk::MultiSelection::new(Some(file_store.clone()));
-    let file_column_view = build_file_column_view(&file_selection, &state, &window);
+    // File list with empty state
+    let (file_column_view, file_store, file_selection) = build_file_column_view(&state, &window);
     let file_scroll = gtk::ScrolledWindow::builder().child(&file_column_view).vexpand(true).build();
     file_scroll.add_css_class("card");
-    main_box.append(&file_scroll);
+
+    let file_empty_page = adw::StatusPage::builder()
+        .icon_name("folder-documents-symbolic")
+        .title(&crate::fls!("empty_state_files_title"))
+        .description(&crate::fls!("empty_state_files_description"))
+        .build();
+
+    let file_stack = gtk::Stack::new();
+    file_stack.add_named(&file_scroll, Some("list"));
+    file_stack.add_named(&file_empty_page, Some("empty"));
+    file_stack.set_visible_child_name("empty");
+    main_box.append(&file_stack);
 
     // File action bar (bottom of file list)
     let file_action_bar = gtk::ActionBar::new();
@@ -208,13 +217,25 @@ pub fn build_gtk_app(
     rule_status.set_margin_bottom(4);
     main_box.append(&rule_status);
 
-    // Rule list
+    // Rule list with empty state
     let rule_store = gio::ListStore::new::<RuleRow>();
     let rule_selection = gtk::MultiSelection::new(Some(rule_store.clone()));
+    state.borrow_mut().rule_selection = Some(rule_selection.clone());
     let rule_column_view = build_rule_column_view(&rule_selection, &state, &editor_state, &rule_store, &gui_state, &window);
     let rule_scroll = gtk::ScrolledWindow::builder().child(&rule_column_view).vexpand(true).build();
     rule_scroll.add_css_class("card");
-    main_box.append(&rule_scroll);
+
+    let rule_empty_page = adw::StatusPage::builder()
+        .icon_name("text-x-generic-symbolic")
+        .title(&crate::fls!("empty_state_rules_title"))
+        .description(&crate::fls!("empty_state_rules_description"))
+        .build();
+
+    let rule_stack = gtk::Stack::new();
+    rule_stack.add_named(&rule_scroll, Some("list"));
+    rule_stack.add_named(&rule_empty_page, Some("empty"));
+    rule_stack.set_visible_child_name("empty");
+    main_box.append(&rule_stack);
 
     // Rule action bar (bottom of rule list)
     let rule_action_bar = gtk::ActionBar::new();
@@ -268,6 +289,8 @@ pub fn build_gtk_app(
         let pb = progress_banner.clone();
         let ps = progress_spinner.clone();
         let pl = progress_label.clone();
+        let file_stack_c = file_stack.clone();
+        let rule_stack_c = rule_stack.clone();
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
             let file_count = file_store_c.n_items() as i32;
             let rule_count = rule_store_c.n_items() as i32;
@@ -282,11 +305,16 @@ pub fn build_gtk_app(
             }
             start_btn_c.set_sensitive(file_count > 0 && rule_count > 0);
             update_btn_c.set_sensitive(file_count > 0);
+            // Switch file stack
+            file_stack_c.set_visible_child_name(if file_count > 0 { "list" } else { "empty" });
+            // Switch rule stack
             if rule_count > 0 {
                 rule_status_c.set_label(&format!("{} ({})", t.bottom_rule_label_rules, rule_count));
             } else {
                 rule_status_c.set_label(&t.bottom_rule_label_rules);
             }
+            rule_stack_c.set_visible_child_name(if rule_count > 0 { "list" } else { "empty" });
+            // Progress banner
             let active = gs.borrow().message_dialog_title.len() > 0;
             pb.set_reveal_child(active);
             if active {
@@ -675,8 +703,11 @@ fn show_add_folders_dialog(window: &adw::ApplicationWindow, state: &SharedState,
     dialog.present(Some(window));
 }
 
-fn build_file_column_view(selection: &gtk::MultiSelection, state: &SharedState, _window: &adw::ApplicationWindow) -> gtk::ColumnView {
-    let column_view = gtk::ColumnView::new(Some(selection.clone()));
+fn build_file_column_view(state: &SharedState, _window: &adw::ApplicationWindow) -> (gtk::ColumnView, gio::ListStore, gtk::MultiSelection) {
+    let file_store = gio::ListStore::new::<FileRow>();
+    let initial_selection = gtk::MultiSelection::new(Some(file_store.clone()));
+    let column_view = gtk::ColumnView::new(Some(initial_selection.clone()));
+    drop(initial_selection);
     column_view.set_show_row_separators(true);
     column_view.set_show_column_separators(true);
     column_view.set_single_click_activate(false);
@@ -717,33 +748,18 @@ fn build_file_column_view(selection: &gtk::MultiSelection, state: &SharedState, 
     path_col.set_expand(true);
     path_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().path(), &b.downcast_ref::<FileRow>().unwrap().path()).into())));
     column_view.append_column(&path_col);
-    // Column sorting
-    {
-        let st = state.clone();
-        let store = selection.model().and_downcast::<gio::ListStore>().unwrap();
-        let last_sort: std::rc::Rc<std::cell::Cell<i32>> = std::rc::Rc::new(std::cell::Cell::new(-1));
-        let last_desc: std::rc::Rc<std::cell::Cell<bool>> = std::rc::Rc::new(std::cell::Cell::new(false));
-        column_view.connect_sorter_notify(move |_cv| {
-            let current = last_sort.get();
-            let (key, desc) = match current {
-                0 => { if last_desc.get() { (crate::connect::files::SortKey::None, false) } else { (crate::connect::files::SortKey::Type, true) } }
-                1 => { if last_desc.get() { (crate::connect::files::SortKey::Type, false) } else { (crate::connect::files::SortKey::Current, true) } }
-                2 => { if last_desc.get() { (crate::connect::files::SortKey::Current, false) } else { (crate::connect::files::SortKey::Future, true) } }
-                3 => { if last_desc.get() { (crate::connect::files::SortKey::Future, false) } else { (crate::connect::files::SortKey::Path, true) } }
-                _ => (crate::connect::files::SortKey::Type, false),
-            };
-            let new_idx = match key { crate::connect::files::SortKey::None => -1, crate::connect::files::SortKey::Type => 0, crate::connect::files::SortKey::Current => 1, crate::connect::files::SortKey::Future => 2, crate::connect::files::SortKey::Path => 3 };
-            last_sort.set(new_idx); last_desc.set(desc);
-            if key != crate::connect::files::SortKey::None { crate::connect::files::sort_files_by(&st, &store, key, desc); }
-        });
-    }
+    let sort_model = gtk::SortListModel::new(Some(file_store.clone()), column_view.sorter());
+    let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
+    column_view.set_model(Some(&selection));
+    state.borrow_mut().file_selection = Some(selection.clone());
+    state.borrow_mut().file_sort_model = Some(sort_model);
     // Double-click to open file
     { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
         gesture.connect_pressed(move |_, n_press, _, _| { if n_press == 2 { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.full_name); } } } }); column_view.add_controller(gesture); }
     // Right-click to open containing folder
     { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(3);
         gesture.connect_released(move |_, _, _, _| { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.path); } } }); column_view.add_controller(gesture); }
-    column_view
+    (column_view, file_store, selection)
 }
 
 fn build_rule_column_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> gtk::ColumnView {

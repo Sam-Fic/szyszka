@@ -330,6 +330,12 @@ ctrl_text_to_replace = Replaced text
 ctrl_trim_text = Trim text
 ctrl_match_against = Match against:
 
+# Empty states
+empty_state_files_title = No files loaded
+empty_state_files_description = Add files or folders to start renaming
+empty_state_rules_title = No rules configured
+empty_state_rules_description = Add a rule to define how files should be renamed
+
 # Status
 status_update_required = UPDATE REQUIRED
 status_up_to_date = up to date

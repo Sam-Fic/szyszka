@@ -16,6 +16,9 @@ pub struct AppState {
     pub async_active: bool,
     pub pending_folders: Vec<PathBuf>,
     pub failed_renames: Vec<String>,
+    pub file_selection: Option<gtk::MultiSelection>,
+    pub file_sort_model: Option<gtk::SortListModel>,
+    pub rule_selection: Option<gtk::MultiSelection>,
 }
 
 pub type SharedState = Rc<RefCell<AppState>>;

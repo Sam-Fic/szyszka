@@ -144,6 +144,11 @@ pub fn start_async_scan(items: &[PathBuf], state: &SharedState, store: &gio::Lis
 }
 
 pub fn remove_selected(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState) {
+    // Sync selection from GTK before operating
+    let sel = state.borrow().file_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         let to_remove: Vec<usize> = state_mut
@@ -168,6 +173,10 @@ pub fn remove_selected(state: &SharedState, store: &gio::ListStore, gui_state: &
 }
 
 pub fn move_selected_up(state: &SharedState, store: &gio::ListStore) {
+    let sel = state.borrow().file_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -182,6 +191,10 @@ pub fn move_selected_up(state: &SharedState, store: &gio::ListStore) {
 }
 
 pub fn move_selected_down(state: &SharedState, store: &gio::ListStore) {
+    let sel = state.borrow().file_selection.clone();
+    if let Some(sel) = &sel {
+        crate::connect::sync::sync_selection_from_gtk(sel, state);
+    }
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();

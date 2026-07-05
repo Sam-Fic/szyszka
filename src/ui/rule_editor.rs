@@ -139,41 +139,61 @@ pub fn show_rule_editor(
         entry_group.add(&entry);
         page.add(&entry_group);
 
+        let saved_group = adw::PreferencesGroup::builder().title(&crate::fls!("rule_editor_custom_saved")).build();
+        let saved_list_box = gtk::ListBox::new();
+        saved_list_box.add_css_class("boxed-list");
+
+        let refresh_saved_list = {
+            let saved_list_box = saved_list_box.clone();
+            let es = editor_state.clone();
+            move || {
+                while let Some(child) = saved_list_box.first_child() {
+                    saved_list_box.remove(&child);
+                }
+                for (idx, text) in crate::connect::rules_ops::refresh_custom_texts().iter().enumerate() {
+                    let row = adw::ActionRow::builder().title(text).activatable(false).build();
+                    let load_btn = gtk::Button::from_icon_name("document-open-symbolic");
+                    load_btn.set_size_request(32, 32);
+                    load_btn.set_vexpand(false);
+                    load_btn.set_valign(gtk::Align::Center);
+                    load_btn.add_css_class("flat");
+                    load_btn.set_tooltip_text(Some(&crate::fls!("rule_editor_load")));
+                    let es2 = es.clone();
+                    let i = idx as i32;
+                    load_btn.connect_clicked(move |_| crate::connect::rules_ops::load_custom_text_into_editor(&es2, i));
+                    row.add_suffix(&load_btn);
+                    let del_btn = gtk::Button::from_icon_name("user-trash-symbolic");
+                    del_btn.set_size_request(32, 32);
+                    del_btn.set_vexpand(false);
+                    del_btn.set_valign(gtk::Align::Center);
+                    del_btn.add_css_class("flat");
+                    del_btn.add_css_class("destructive-action");
+                    del_btn.set_tooltip_text(Some(&crate::fls!("rule_editor_delete")));
+                    let i = idx as i32;
+                    del_btn.connect_clicked(move |_| crate::connect::rules_ops::delete_custom_text(i));
+                    row.add_suffix(&del_btn);
+                    saved_list_box.append(&row);
+                }
+            }
+        };
+        refresh_saved_list();
+        saved_group.add(&saved_list_box);
+        page.add(&saved_group);
+
+        // Save button (after list is set up so it can refresh)
         let action_group = adw::PreferencesGroup::new();
         let save_btn = icon_button(&crate::fls!("rule_editor_custom_save"), "document-save-symbolic");
         save_btn.set_halign(gtk::Align::Start);
-        { let entry = entry.clone(); save_btn.connect_clicked(move |_| crate::connect::rules_ops::save_custom_text(&entry.text())); }
+        {
+            let entry = entry.clone();
+            let refresh = refresh_saved_list.clone();
+            save_btn.connect_clicked(move |_| {
+                crate::connect::rules_ops::save_custom_text(&entry.text());
+                refresh();
+            });
+        }
         action_group.add(&save_btn);
         page.add(&action_group);
-
-        let saved_group = adw::PreferencesGroup::builder().title(&crate::fls!("rule_editor_custom_saved")).build();
-        for (idx, text) in crate::connect::rules_ops::refresh_custom_texts().iter().enumerate() {
-            let row = adw::ActionRow::builder().title(text).activatable(false).build();
-
-            let load_btn = gtk::Button::from_icon_name("document-open-symbolic");
-            load_btn.set_size_request(32, 32);
-            load_btn.set_vexpand(false);
-            load_btn.set_valign(gtk::Align::Center);
-            load_btn.add_css_class("flat");
-            load_btn.set_tooltip_text(Some(&crate::fls!("rule_editor_load")));
-            let es2 = editor_state.clone();
-            let i = idx as i32;
-            load_btn.connect_clicked(move |_| crate::connect::rules_ops::load_custom_text_into_editor(&es2, i));
-            row.add_suffix(&load_btn);
-
-            let del_btn = gtk::Button::from_icon_name("user-trash-symbolic");
-            del_btn.set_size_request(32, 32);
-            del_btn.set_vexpand(false);
-            del_btn.set_valign(gtk::Align::Center);
-            del_btn.add_css_class("flat");
-            del_btn.add_css_class("destructive-action");
-            del_btn.set_tooltip_text(Some(&crate::fls!("rule_editor_delete")));
-            let i = idx as i32;
-            del_btn.connect_clicked(move |_| crate::connect::rules_ops::delete_custom_text(i));
-            row.add_suffix(&del_btn);
-            saved_group.add(&row);
-        }
-        page.add(&saved_group);
         stack.add_titled(&page, Some("custom"), &crate::fls!("tab_custom"));
         stack.page(&page).set_icon_name("document-edit-symbolic");
     }

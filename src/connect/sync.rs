@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use glib::prelude::*;
 use humansize::{format_size, BINARY};
 
 use crate::state::SharedState;
@@ -6,8 +7,8 @@ use crate::ui::models::{FileRow, RuleRow};
 use crate::ui::state_ui::SharedGuiState;
 
 pub fn sync_files(store: &gio::ListStore, state: &SharedState) {
-    store.remove_all();
     let state_ref = state.borrow();
+    store.remove_all();
     for (idx, item) in state_ref.files.iter().enumerate() {
         let selected = state_ref.file_selected.get(idx).copied().unwrap_or(false);
         let row = FileRow::new(
@@ -24,8 +25,8 @@ pub fn sync_files(store: &gio::ListStore, state: &SharedState) {
 }
 
 pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
-    store.remove_all();
     let state_ref = state.borrow();
+    store.remove_all();
     for (idx, rule) in state_ref.rules.rules.iter().enumerate() {
         let selected = state_ref.rule_selected.get(idx).copied().unwrap_or(false);
         let row = RuleRow::new(
@@ -36,6 +37,52 @@ pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
         );
         store.append(&row);
     }
+}
+
+/// Read GTK MultiSelection state and update state.file_selected.
+/// With SortListModel, GTK selection indices are in sorted order,
+/// so we must map them back to the original ListStore order.
+pub fn sync_selection_from_gtk(selection: &gtk::MultiSelection, state: &SharedState) {
+    use gtk::prelude::SelectionModelExt;
+    use gtk::prelude::ListModelExt;
+    let mut s = state.borrow_mut();
+    let n = s.files.len();
+    let mut selected = vec![false; n];
+    let gtk_selection = selection.selection();
+    let sort_model = s.file_sort_model.as_ref();
+    for i in 0..gtk_selection.size() {
+        let sorted_idx = gtk_selection.nth(i as u32);
+        if let Some(sm) = sort_model {
+            if let Some(item) = sm.item(sorted_idx) {
+                if let Some(file_row) = item.downcast_ref::<crate::ui::models::FileRow>() {
+                    let row_path = file_row.path();
+                    let row_name = file_row.current_name();
+                    if let Some(orig_idx) = s.files.iter().position(|f| f.path == row_path && f.name == row_name) {
+                        if orig_idx < n {
+                            selected[orig_idx] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    s.file_selected = selected;
+}
+
+/// Read GTK MultiSelection state and update state.rule_selected
+pub fn sync_rule_selection_from_gtk(selection: &gtk::MultiSelection, state: &SharedState) {
+    use gtk::prelude::SelectionModelExt;
+    let n = state.borrow().rules.rules.len();
+    let mut selected = vec![false; n];
+    let gtk_selection = selection.selection();
+    for i in 0..n as u32 {
+        if gtk_selection.contains(i) {
+            if let Some(s) = selected.get_mut(i as usize) {
+                *s = true;
+            }
+        }
+    }
+    state.borrow_mut().rule_selected = selected;
 }
 
 pub fn sync_outdated(gui_state: &SharedGuiState, state: &SharedState) {

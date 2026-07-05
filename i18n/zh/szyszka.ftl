@@ -323,6 +323,12 @@ ctrl_text_to_replace = 替换为
 ctrl_trim_text = 要修剪的文本
 ctrl_match_against = 匹配：
 
+# Empty states
+empty_state_files_title = 未加载文件
+empty_state_files_description = 添加文件或文件夹以开始重命名
+empty_state_rules_title = 未配置规则
+empty_state_rules_description = 添加规则以定义文件重命名方式
+
 # Status
 status_update_required = 需要更新
 status_up_to_date = 已是最新
