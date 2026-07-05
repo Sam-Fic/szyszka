@@ -138,6 +138,12 @@ pub struct GuiState {
 
     pub last_file_anchor_idx: i32,
     pub last_rule_anchor_idx: i32,
+
+    pub progress_active: bool,
+    pub progress_title: String,
+    pub progress_message: String,
+    pub progress_current: usize,
+    pub progress_total: usize,
 }
 
 impl Default for GuiState {
@@ -185,6 +191,12 @@ impl Default for GuiState {
 
             last_file_anchor_idx: -1,
             last_rule_anchor_idx: -1,
+
+            progress_active: false,
+            progress_title: String::new(),
+            progress_message: String::new(),
+            progress_current: 0,
+            progress_total: 0,
         }
     }
 }

@@ -55,6 +55,11 @@ pub fn build_gtk_app(
         .height_request(600)
         .build();
 
+    // Custom CSS for green future name highlighting
+    let css_provider = gtk::CssProvider::new();
+    css_provider.load_from_data(".future-name-changed { color: #2e8b57; }");
+    // Will be added to display after window is realized
+
     let toolbar_view = adw::ToolbarView::new();
     let header = adw::HeaderBar::new();
 
@@ -66,8 +71,6 @@ pub fn build_gtk_app(
 
     let add_files_btn = icon_button(&crate::fls!("upper_add_files_button"), "document-open-symbolic");
     let add_folders_btn = icon_button(&crate::fls!("upper_add_folders_button"), "folder-open-symbolic");
-    header.pack_start(&add_files_btn);
-    header.pack_start(&add_folders_btn);
 
     // Hamburger menu
     let menu_model = gio::Menu::new();
@@ -186,6 +189,8 @@ pub fn build_gtk_app(
     let file_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
     file_main_box.set_homogeneous(true);
     file_main_box.set_hexpand(true);
+    file_main_box.append(&add_files_btn);
+    file_main_box.append(&add_folders_btn);
     file_main_box.append(&remove_btn);
     file_main_box.append(&select_btn);
     file_main_box.append(&update_btn);
@@ -264,6 +269,19 @@ pub fn build_gtk_app(
     toolbar_view.set_content(Some(&main_box));
     window.set_content(Some(&toolbar_view));
 
+    // Add CSS provider to display when realized
+    {
+        let cp = css_provider.clone();
+        window.connect_realize(move |w| {
+            let display = gtk::prelude::WidgetExt::display(w);
+            gtk::style_context_add_provider_for_display(
+                &display,
+                &cp,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        });
+    }
+
     let gtk_app = GtkApp {
         window: window.clone(),
         file_store: file_store.clone(),
@@ -291,6 +309,8 @@ pub fn build_gtk_app(
         let pb = progress_banner.clone();
         let file_stack_c = file_stack.clone();
         let rule_stack_c = rule_stack.clone();
+        let w = window.clone();
+        let progress_dialog_cell = std::rc::Rc::new(std::cell::RefCell::new(None::<adw::Dialog>));
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
             let file_count = file_store_c.n_items() as i32;
             let rule_count = rule_store_c.n_items() as i32;
@@ -312,10 +332,70 @@ pub fn build_gtk_app(
                 rule_status_c.set_label(&t.bottom_rule_label_rules);
             }
             rule_stack_c.set_visible_child_name(if rule_count > 0 { "list" } else { "empty" });
+
+            // Progress dialog (blocking, determinate)
+            let progress_active = gs.borrow().progress_active;
+            if progress_active {
+                let title = gs.borrow().progress_title.clone();
+                let message = gs.borrow().progress_message.clone();
+                let current = gs.borrow().progress_current;
+                let total = gs.borrow().progress_total;
+                let fraction = if total > 0 { current as f64 / total as f64 } else { 0.0 };
+
+                let mut cell = progress_dialog_cell.borrow_mut();
+                if let Some(ref dlg) = *cell {
+                    // Update existing dialog
+                    if let Some(child) = dlg.first_child() {
+                        if let Some(vbox) = child.downcast_ref::<gtk::Box>() {
+                            if let Some(title_lbl) = vbox.first_child().and_then(|w| w.downcast_ref::<gtk::Label>().cloned()) {
+                                title_lbl.set_label(&title);
+                            }
+                            if let Some(msg_lbl) = vbox.first_child().and_then(|w| w.next_sibling()).and_then(|w| w.downcast_ref::<gtk::Label>().cloned()) {
+                                msg_lbl.set_label(&message);
+                            }
+                            if let Some(bar) = vbox.first_child().and_then(|w| w.next_sibling()).and_then(|w| w.next_sibling()).and_then(|w| w.downcast_ref::<gtk::ProgressBar>().cloned()) {
+                                bar.set_fraction(fraction);
+                            }
+                        }
+                    }
+                } else {
+                    // Create new dialog
+                    let dlg = adw::Dialog::builder()
+                        .title(&title)
+                        .content_width(400)
+                        .content_height(160)
+                        .can_close(false)
+                        .build();
+
+                    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 8);
+                    vbox.set_margin_top(16); vbox.set_margin_bottom(16);
+                    vbox.set_margin_start(16); vbox.set_margin_end(16);
+
+                    let title_lbl = gtk::Label::builder().label(&title).xalign(0.0).build();
+                    title_lbl.add_css_class("heading");
+                    vbox.append(&title_lbl);
+                    let msg_lbl = gtk::Label::builder().label(&message).xalign(0.0).wrap(true).build();
+                    msg_lbl.add_css_class("dim-label");
+                    vbox.append(&msg_lbl);
+                    let bar = gtk::ProgressBar::builder().fraction(fraction).hexpand(true).build();
+                    vbox.append(&bar);
+
+                    dlg.set_child(Some(&vbox));
+                    dlg.present(Some(&w));
+                    *cell = Some(dlg);
+                }
+            } else {
+                let mut cell = progress_dialog_cell.borrow_mut();
+                if let Some(dlg) = cell.take() {
+                    dlg.close();
+                }
+            }
+
+            // Banner (indeterminate text messages)
             let title = gs.borrow().message_dialog_title.clone();
             let active = !title.is_empty();
-            pb.set_revealed(active);
-            if active {
+            pb.set_revealed(active && !progress_active);
+            if active && !progress_active {
                 pb.set_title(&title);
             }
             glib::ControlFlow::Continue
@@ -734,23 +814,31 @@ fn build_file_column_view(state: &SharedState, _window: &adw::ApplicationWindow)
                 1 => row.current_name(), 2 => row.future_name(), 3 => row.path(), _ => String::new(),
             };
             label.set_label(&text);
+            label.remove_css_class("future-name-changed");
+            if col_idx == 2 && text != row.current_name() {
+                label.add_css_class("future-name-changed");
+            }
         });
         factory
     };
     let type_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_type")), Some(make_factory(0)));
     type_col.set_fixed_width(50);
+    type_col.set_resizable(true);
     type_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| a.downcast_ref::<FileRow>().unwrap().is_dir().cmp(&b.downcast_ref::<FileRow>().unwrap().is_dir()).into())));
     column_view.append_column(&type_col);
     let current_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_current_name")), Some(make_factory(1)));
     current_col.set_expand(true);
+    current_col.set_resizable(true);
     current_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().current_name(), &b.downcast_ref::<FileRow>().unwrap().current_name()).into())));
     column_view.append_column(&current_col);
     let future_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_future_name")), Some(make_factory(2)));
     future_col.set_expand(true);
+    future_col.set_resizable(true);
     future_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().future_name(), &b.downcast_ref::<FileRow>().unwrap().future_name()).into())));
     column_view.append_column(&future_col);
     let path_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_path")), Some(make_factory(3)));
     path_col.set_expand(true);
+    path_col.set_resizable(true);
     path_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().path(), &b.downcast_ref::<FileRow>().unwrap().path()).into())));
     column_view.append_column(&path_col);
     let sort_model = gtk::SortListModel::new(Some(file_store.clone()), column_view.sorter());

@@ -7,6 +7,7 @@ use std::sync::{mpsc, Arc};
 use gtk::prelude::*;
 use adw::prelude::*;
 
+use crate::connect::progress::{hide_progress_dialog, show_progress_dialog, update_progress};
 use crate::files::CHARACTER;
 use crate::fls;
 use crate::state::SharedState;
@@ -21,7 +22,7 @@ struct RenameResult {
     failed: Vec<(String, String, String)>,
 }
 
-pub fn start_renaming_request(window: &adw::ApplicationWindow, state: &SharedState, _gui_state: &SharedGuiState) {
+pub fn start_renaming_request(window: &adw::ApplicationWindow, state: &SharedState, gui_state: &SharedGuiState) {
     let state_ref = state.borrow();
 
     if state_ref.files.is_empty() {
@@ -43,19 +44,20 @@ pub fn start_renaming_request(window: &adw::ApplicationWindow, state: &SharedSta
         dialog.set_response_appearance("proceed", adw::ResponseAppearance::Suggested);
         let window_clone = window.clone();
         let state_clone = state.clone();
+        let gs_clone = gui_state.clone();
         dialog.connect_response(Some("proceed"), move |_, _| {
             let count = state_clone.borrow().files.len() as i32;
-            dialogs::show_confirm_dialog(&window_clone, state_clone.clone(), count);
+            dialogs::show_confirm_dialog(&window_clone, state_clone.clone(), gs_clone.clone(), count);
         });
         dialog.present(Some(window));
     } else {
         let count = state_ref.files.len() as i32;
         drop(state_ref);
-        dialogs::show_confirm_dialog(window, state.clone(), count);
+        dialogs::show_confirm_dialog(window, state.clone(), gui_state.clone(), count);
     }
 }
 
-pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState) {
+pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState, gui_state: &SharedGuiState) {
     let mut file_renames: Vec<(String, String)> = Vec::new();
     let mut folder_renames: BTreeMap<usize, Vec<(String, String)>> = BTreeMap::new();
 
@@ -75,6 +77,8 @@ pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState) {
 
     let total = file_renames.len() + folder_renames.values().map(|v| v.len()).sum::<usize>();
     log::info!("Renaming {} items", total);
+
+    show_progress_dialog(gui_state, &fls!("dialog_confirm_renaming"), &fls!("dialog_loading"), total);
 
     let counter = Arc::new(AtomicUsize::new(0));
     let counter_w = counter.clone();
@@ -108,19 +112,24 @@ pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState) {
     let counter_p = counter;
     let state_clone = state.clone();
     let window_clone = window.clone();
+    let gs_clone = gui_state.clone();
 
     glib::timeout_add_local(std::time::Duration::from_millis(60), move || {
         let cur = counter_p.load(AtomicOrdering::Relaxed);
         log::debug!("Rename progress: {}/{}", cur, total);
 
+        update_progress(&gs_clone, cur);
+
         match rx.try_recv() {
             Ok(result) => {
+                hide_progress_dialog(&gs_clone);
                 finalize_rename(&window_clone, &state_clone, &result);
                 state_clone.borrow_mut().async_active = false;
                 glib::ControlFlow::Break
             }
             Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
             Err(mpsc::TryRecvError::Disconnected) => {
+                hide_progress_dialog(&gs_clone);
                 state_clone.borrow_mut().async_active = false;
                 glib::ControlFlow::Break
             }
@@ -129,8 +138,8 @@ pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState) {
     state.borrow_mut().async_active = true;
 }
 
-pub fn perform_renaming_gtk(window: &adw::ApplicationWindow, state: &SharedState) {
-    perform_renaming(window, state);
+pub fn perform_renaming_gtk(window: &adw::ApplicationWindow, state: &SharedState, gui_state: &SharedGuiState) {
+    perform_renaming(window, state, gui_state);
 }
 
 fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result: &RenameResult) {
