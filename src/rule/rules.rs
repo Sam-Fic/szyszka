@@ -139,6 +139,20 @@ pub fn rule_type_to_string(rule_type: RuleType) -> String {
     }
 }
 
+/// Map each rule type to a standard symbolic icon name for the native list UI.
+pub fn rule_type_icon(rule_type: RuleType) -> &'static str {
+    match rule_type {
+        RuleType::Custom => "document-edit-symbolic",
+        RuleType::CaseSize => "change-case-symbolic",
+        RuleType::Purge => "user-trash-symbolic",
+        RuleType::AddText => "insert-text-symbolic",
+        RuleType::Trim => "edit-cut-symbolic",
+        RuleType::Replace => "edit-find-replace-symbolic",
+        RuleType::AddNumber => "format-number-symbolic",
+        RuleType::Normalize => "text-x-generic-symbolic",
+    }
+}
+
 pub fn rule_place_to_string(rule_type: RulePlace) -> String {
     match rule_type {
         RulePlace::None => fls!("rule_place_none"),

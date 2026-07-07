@@ -25,6 +25,120 @@ fn icon_button(label: &str, icon: &str) -> gtk::Button {
     btn
 }
 
+/// Compact icon-only button for card headers (native toolbar style).
+fn header_button(icon: &str, tooltip: &str) -> gtk::Button {
+    let btn = gtk::Button::from_icon_name(icon);
+    btn.set_tooltip_text(Some(tooltip));
+    btn.set_hexpand(false);
+    btn
+}
+
+/// Comparison for the file list, by sort criterion id.
+fn file_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::Ordering {
+    let ra = a.downcast_ref::<FileRow>().unwrap();
+    let rb = b.downcast_ref::<FileRow>().unwrap();
+    match id {
+        1 => natord::compare(&ra.future_name(), &rb.future_name()),
+        2 => natord::compare(&ra.path(), &rb.path()),
+        3 => rb.is_dir().cmp(&ra.is_dir()).then_with(|| natord::compare(&ra.current_name(), &rb.current_name())),
+        _ => natord::compare(&ra.current_name(), &rb.current_name()),
+    }
+}
+
+/// Comparison for the rule list, by sort criterion id.
+fn rule_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::Ordering {
+    let ra = a.downcast_ref::<RuleRow>().unwrap();
+    let rb = b.downcast_ref::<RuleRow>().unwrap();
+    match id {
+        1 => natord::compare(&ra.usage_text(), &rb.usage_text()),
+        _ => natord::compare(&ra.rule_type_text(), &rb.rule_type_text()),
+    }
+}
+
+/// Build a native "Sort by" control: a `GtkMenuButton` opening a popover with
+/// checkmarked sort criteria and an ascending/descending toggle (Nautilus style).
+/// `make_sorter` receives the criterion id and whether it is ascending.
+fn build_sort_menu(
+    sort_model: &gtk::SortListModel,
+    labels: &[&str],
+    make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter>,
+) -> gtk::MenuButton {
+    let state = Rc::new(std::cell::RefCell::new((0u32, true))); // (criterion id, ascending)
+
+    let mb = gtk::MenuButton::new();
+    mb.set_icon_name("view-sort-ascending-symbolic");
+    mb.set_tooltip_text(Some(&crate::fls!("sort_by")));
+    mb.set_hexpand(false);
+    mb.set_has_frame(true);
+
+    let pop = gtk::Popover::new();
+    pop.set_margin_top(4);
+    pop.set_margin_bottom(4);
+    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    vbox.set_margin_top(6);
+    vbox.set_margin_bottom(6);
+    vbox.set_margin_start(6);
+    vbox.set_margin_end(6);
+
+    // Sort criteria (radio checkmarks)
+    let mut group_leader: Option<gtk::CheckButton> = None;
+    for (i, &label) in labels.iter().enumerate() {
+        let cb = gtk::CheckButton::with_label(label);
+        cb.set_hexpand(true);
+        if let Some(leader) = &group_leader {
+            cb.set_group(Some(leader));
+        } else {
+            group_leader = Some(cb.clone());
+        }
+        if i == 0 {
+            cb.set_active(true);
+        }
+        let st = state.clone();
+        let sm = sort_model.clone();
+        let mb_icon = mb.clone();
+        let mk = make_sorter.clone();
+        cb.connect_toggled(move |cb| {
+            if cb.is_active() {
+                st.borrow_mut().0 = i as u32;
+                let asc = st.borrow().1;
+                sm.set_sorter(Some(&mk(i as u32, asc)));
+                mb_icon.set_icon_name(if asc { "view-sort-ascending-symbolic" } else { "view-sort-descending-symbolic" });
+            }
+        });
+        vbox.append(&cb);
+    }
+
+    let sep = gtk::Separator::new(gtk::Orientation::Horizontal);
+    sep.set_margin_top(4);
+    sep.set_margin_bottom(4);
+    vbox.append(&sep);
+
+    // Ascending / descending toggle
+    let desc_cb = gtk::CheckButton::with_label(&crate::fls!("sort_descending"));
+    desc_cb.set_hexpand(true);
+    {
+        let st = state.clone();
+        let sm = sort_model.clone();
+        let mb_icon = mb.clone();
+        let mk = make_sorter.clone();
+        desc_cb.connect_toggled(move |cb| {
+            let asc = !cb.is_active();
+            st.borrow_mut().1 = asc;
+            let id = st.borrow().0;
+            sm.set_sorter(Some(&mk(id, asc)));
+            mb_icon.set_icon_name(if asc { "view-sort-ascending-symbolic" } else { "view-sort-descending-symbolic" });
+        });
+    }
+    vbox.append(&desc_cb);
+
+    pop.set_child(Some(&vbox));
+    mb.set_popover(Some(&pop));
+
+    // Apply the default sort
+    sort_model.set_sorter(Some(&make_sorter(0, true)));
+    mb
+}
+
 pub struct GtkApp {
     pub window: adw::ApplicationWindow,
     pub file_store: gio::ListStore,
@@ -55,14 +169,23 @@ pub fn build_gtk_app(
         .height_request(600)
         .build();
 
-    // Custom CSS for green future name highlighting and selection styling
+    // Custom CSS for the list cards and future-name highlighting
     let css_provider = gtk::CssProvider::new();
     css_provider.load_from_data(
-        ".future-name-changed { color: #2e8b57; }
-         columnview > listview > row:selected {
+        ".future-name-changed { color: @success_color; }
+         .list-card-header {
+             padding: 6px 10px;
+             border-bottom: 1px solid @borders;
+         }
+         .list-card-header > * { margin: 0 2px; }
+         listview row {
+             padding: 0;
+             border-radius: 0;
+         }
+         listview row:selected {
              background: @accent_bg_color;
          }
-         columnview > listview > row:selected label {
+         listview row:selected label {
              color: @accent_fg_color;
          }
          .drop-hover {
@@ -156,25 +279,21 @@ pub fn build_gtk_app(
     toolbar_view.add_top_bar(&header);
 
     // Main content
-    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    main_box.set_margin_start(12);
+    main_box.set_margin_end(12);
+    main_box.set_margin_top(12);
+    main_box.set_margin_bottom(12);
 
     // Progress banner
     let progress_banner = adw::Banner::new(&crate::fls!("dialog_loading"));
     progress_banner.set_revealed(false);
     main_box.append(&progress_banner);
 
-    // File status label
-    let file_status = gtk::Label::builder().label(&crate::fls!("upper_files_folders_label")).xalign(0.0).build();
-    file_status.add_css_class("heading");
-    file_status.set_margin_start(12);
-    file_status.set_margin_top(8);
-    file_status.set_margin_bottom(4);
-    main_box.append(&file_status);
+    // ===== Files card =====
+    let (file_list_view, file_store, _file_selection, file_sort_model) = build_file_list_view(&state, &window);
 
-    // File list with empty state
-    let (file_column_view, file_store, file_selection) = build_file_column_view(&state, &window);
-    let file_scroll = gtk::ScrolledWindow::builder().child(&file_column_view).vexpand(true).build();
-    file_scroll.add_css_class("card");
+    let file_scroll = gtk::ScrolledWindow::builder().child(&file_list_view).vexpand(true).build();
 
     let file_empty_page = adw::StatusPage::builder()
         .icon_name("folder-documents-symbolic")
@@ -190,7 +309,6 @@ pub fn build_gtk_app(
     file_stack.add_named(&file_scroll, Some("list"));
     file_stack.add_named(&file_empty_page, Some("empty"));
     file_stack.set_visible_child_name("empty");
-    main_box.append(&file_stack);
 
     // === Drag and drop to add files/folders ===
     {
@@ -270,52 +388,66 @@ pub fn build_gtk_app(
         window.add_controller(drop_target);
     }
 
-    // File action bar (bottom of file list)
-    let file_action_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    file_action_bar.set_margin_top(4);
-    file_action_bar.set_margin_bottom(4);
-    file_action_bar.set_margin_start(4);
-    file_action_bar.set_margin_end(4);
-    let remove_btn = icon_button(&crate::fls!("upper_remove_selection_button"), "edit-delete-symbolic");
-    let select_btn = icon_button(&crate::fls!("upper_select_popup_button"), "edit-select-all-symbolic");
-    let update_btn = icon_button(&crate::fls!("upper_update_names_button"), "view-refresh-symbolic");
+    // Files card header buttons
+    let remove_btn = header_button("edit-delete-symbolic", &crate::fls!("upper_remove_selection_button"));
+    let select_btn = header_button("edit-select-all-symbolic", &crate::fls!("upper_select_popup_button"));
+    let update_btn = header_button("view-refresh-symbolic", &crate::fls!("upper_update_names_button"));
     update_btn.set_sensitive(false);
-    let file_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    file_main_box.set_homogeneous(true);
-    file_main_box.set_hexpand(true);
-    file_main_box.append(&add_files_btn);
-    file_main_box.append(&add_folders_btn);
-    file_main_box.append(&remove_btn);
-    file_main_box.append(&select_btn);
-    file_main_box.append(&update_btn);
-    file_action_bar.append(&file_main_box);
-    let move_up_btn = gtk::Button::from_icon_name("go-up-symbolic");
-    move_up_btn.set_tooltip_text(Some("Move Up"));
-    move_up_btn.set_hexpand(false);
-    let move_down_btn = gtk::Button::from_icon_name("go-down-symbolic");
-    move_down_btn.set_tooltip_text(Some("Move Down"));
-    move_down_btn.set_hexpand(false);
-    let move_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    move_box.append(&move_up_btn);
-    move_box.append(&move_down_btn);
-    file_action_bar.append(&move_box);
-    main_box.append(&file_action_bar);
+    let move_up_btn = header_button("go-up-symbolic", "Move Up");
+    let move_down_btn = header_button("go-down-symbolic", "Move Down");
 
-    // Rule status label
-    let rule_status = gtk::Label::builder().label(&crate::fls!("bottom_rule_label_rules")).xalign(0.0).build();
-    rule_status.add_css_class("heading");
-    rule_status.set_margin_start(12);
-    rule_status.set_margin_top(8);
-    rule_status.set_margin_bottom(4);
-    main_box.append(&rule_status);
+    // Files sort control (MenuButton + Popover)
+    let file_make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter> = Rc::new(move |id: u32, asc: bool| -> gtk::Sorter {
+        gtk::CustomSorter::new(move |a, b| {
+            let ord = file_sort_ordering(id, a, b);
+            if asc { ord } else { ord.reverse() }.into()
+        }).upcast()
+    });
+    let file_sort_btn = build_sort_menu(
+        &file_sort_model,
+        &[
+            &crate::fls!("sort_name"),
+            &crate::fls!("sort_future_name"),
+            &crate::fls!("sort_path"),
+            &crate::fls!("sort_type"),
+        ],
+        file_make_sorter,
+    );
 
-    // Rule list with empty state
+    // Files card header
+    let file_status = gtk::Label::new(Some(&crate::fls!("upper_files_folders_label")));
+    file_status.add_css_class("heading");
+    file_status.set_xalign(0.0);
+    file_status.set_hexpand(true);
+    let file_header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    file_header.add_css_class("list-card-header");
+    file_header.append(&file_status);
+    file_header.append(&file_sort_btn);
+    add_files_btn.set_hexpand(false);
+    file_header.append(&add_files_btn);
+    add_folders_btn.set_hexpand(false);
+    file_header.append(&add_folders_btn);
+    file_header.append(&remove_btn);
+    file_header.append(&select_btn);
+    file_header.append(&update_btn);
+    file_header.append(&move_up_btn);
+    file_header.append(&move_down_btn);
+
+    let file_card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    file_card.add_css_class("card");
+    file_card.set_overflow(gtk::Overflow::Hidden);
+    file_card.set_vexpand(true);
+    file_card.append(&file_header);
+    file_card.append(&file_stack);
+    main_box.append(&file_card);
+
+    // ===== Rules card =====
     let rule_store = gio::ListStore::new::<RuleRow>();
     let rule_selection = gtk::MultiSelection::new(Some(rule_store.clone()));
     state.borrow_mut().rule_selection = Some(rule_selection.clone());
-    let rule_column_view = build_rule_column_view(&rule_selection, &state, &editor_state, &rule_store, &file_store, &gui_state, &window);
-    let rule_scroll = gtk::ScrolledWindow::builder().child(&rule_column_view).vexpand(true).build();
-    rule_scroll.add_css_class("card");
+    let (rule_list_view, rule_sort_model) = build_rule_list_view(&rule_selection, &state, &editor_state, &rule_store, &file_store, &gui_state, &window);
+
+    let rule_scroll = gtk::ScrolledWindow::builder().child(&rule_list_view).vexpand(true).build();
 
     let rule_empty_page = adw::StatusPage::builder()
         .icon_name("text-x-generic-symbolic")
@@ -331,39 +463,56 @@ pub fn build_gtk_app(
     rule_stack.add_named(&rule_scroll, Some("list"));
     rule_stack.add_named(&rule_empty_page, Some("empty"));
     rule_stack.set_visible_child_name("empty");
-    main_box.append(&rule_stack);
 
-    // Rule action bar (bottom of rule list)
-    let rule_action_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    rule_action_bar.set_margin_top(4);
-    rule_action_bar.set_margin_bottom(4);
-    rule_action_bar.set_margin_start(4);
-    rule_action_bar.set_margin_end(4);
-    let add_rule_btn = icon_button(&crate::fls!("bottom_rule_add_button"), "list-add-symbolic");
-    let edit_rule_btn = icon_button(&crate::fls!("bottom_rule_edit_button"), "document-edit-symbolic");
-    let remove_rule_btn = icon_button(&crate::fls!("bottom_rule_remove_button"), "list-remove-symbolic");
-    let rule_up_btn = gtk::Button::from_icon_name("go-up-symbolic");
-    rule_up_btn.set_tooltip_text(Some("Move Up"));
-    rule_up_btn.set_hexpand(false);
-    let rule_down_btn = gtk::Button::from_icon_name("go-down-symbolic");
-    rule_down_btn.set_tooltip_text(Some("Move Down"));
-    rule_down_btn.set_hexpand(false);
-    let load_rules_btn = icon_button(&crate::fls!("bottom_rule_load_rules_button"), "document-open-symbolic");
-    let save_rules_btn = icon_button(&crate::fls!("bottom_rule_save_rules_button"), "document-save-symbolic");
-    let rule_main_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    rule_main_box.set_homogeneous(true);
-    rule_main_box.set_hexpand(true);
-    rule_main_box.append(&add_rule_btn);
-    rule_main_box.append(&edit_rule_btn);
-    rule_main_box.append(&remove_rule_btn);
-    rule_main_box.append(&load_rules_btn);
-    rule_main_box.append(&save_rules_btn);
-    rule_action_bar.append(&rule_main_box);
-    let rule_move_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    rule_move_box.append(&rule_up_btn);
-    rule_move_box.append(&rule_down_btn);
-    rule_action_bar.append(&rule_move_box);
-    main_box.append(&rule_action_bar);
+    // Rules card header buttons
+    let add_rule_btn = header_button("list-add-symbolic", &crate::fls!("bottom_rule_add_button"));
+    let edit_rule_btn = header_button("document-edit-symbolic", &crate::fls!("bottom_rule_edit_button"));
+    let remove_rule_btn = header_button("list-remove-symbolic", &crate::fls!("bottom_rule_remove_button"));
+    let load_rules_btn = header_button("document-open-symbolic", &crate::fls!("bottom_rule_load_rules_button"));
+    let save_rules_btn = header_button("document-save-symbolic", &crate::fls!("bottom_rule_save_rules_button"));
+    let rule_up_btn = header_button("go-up-symbolic", "Move Up");
+    let rule_down_btn = header_button("go-down-symbolic", "Move Down");
+
+    // Rules sort control (MenuButton + Popover)
+    let rule_make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter> = Rc::new(move |id: u32, asc: bool| -> gtk::Sorter {
+        gtk::CustomSorter::new(move |a, b| {
+            let ord = rule_sort_ordering(id, a, b);
+            (if asc { ord } else { ord.reverse() }).into()
+        }).upcast()
+    });
+    let rule_sort_btn = build_sort_menu(
+        &rule_sort_model,
+        &[
+            &crate::fls!("sort_type"),
+            &crate::fls!("sort_usage"),
+        ],
+        rule_make_sorter,
+    );
+
+    // Rules card header
+    let rule_status = gtk::Label::new(Some(&crate::fls!("bottom_rule_label_rules")));
+    rule_status.add_css_class("heading");
+    rule_status.set_xalign(0.0);
+    rule_status.set_hexpand(true);
+    let rule_header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    rule_header.add_css_class("list-card-header");
+    rule_header.append(&rule_status);
+    rule_header.append(&rule_sort_btn);
+    rule_header.append(&add_rule_btn);
+    rule_header.append(&edit_rule_btn);
+    rule_header.append(&remove_rule_btn);
+    rule_header.append(&load_rules_btn);
+    rule_header.append(&save_rules_btn);
+    rule_header.append(&rule_up_btn);
+    rule_header.append(&rule_down_btn);
+
+    let rule_card = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    rule_card.add_css_class("card");
+    rule_card.set_overflow(gtk::Overflow::Hidden);
+    rule_card.set_vexpand(true);
+    rule_card.append(&rule_header);
+    rule_card.append(&rule_stack);
+    main_box.append(&rule_card);
 
     toolbar_view.set_content(Some(&main_box));
     window.set_content(Some(&toolbar_view));
@@ -887,108 +1036,147 @@ fn show_add_folders_dialog(window: &adw::ApplicationWindow, state: &SharedState,
     dialog.present(Some(window));
 }
 
-fn build_file_column_view(state: &SharedState, _window: &adw::ApplicationWindow) -> (gtk::ColumnView, gio::ListStore, gtk::MultiSelection) {
+fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -> (gtk::ListView, gio::ListStore, gtk::MultiSelection, gtk::SortListModel) {
     let file_store = gio::ListStore::new::<FileRow>();
-    let initial_selection = gtk::MultiSelection::new(Some(file_store.clone()));
-    let column_view = gtk::ColumnView::new(Some(initial_selection.clone()));
-    drop(initial_selection);
-    column_view.set_show_row_separators(true);
-    column_view.set_show_column_separators(true);
-    column_view.set_single_click_activate(false);
-    let make_factory = |col_idx: usize| {
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(move |_, list_item| {
-            let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-            let label = gtk::Label::new(None);
-            label.set_xalign(0.0); label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-            label.set_margin_start(6); label.set_margin_end(6);
-            li.set_child(Some(&label));
-        });
-        factory.connect_bind(move |_, list_item| {
-            let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-            let row = li.item().and_downcast::<FileRow>().unwrap();
-            let label = li.child().and_downcast::<gtk::Label>().unwrap();
-            let text = match col_idx {
-                0 => if row.is_dir() { "Dir" } else { "File" }.to_string(),
-                1 => row.current_name(), 2 => row.future_name(), 3 => row.path(), _ => String::new(),
-            };
-            label.set_label(&text);
-            label.remove_css_class("future-name-changed");
-            if col_idx == 2 && text != row.current_name() {
-                label.add_css_class("future-name-changed");
-            }
-        });
-        factory
-    };
-    let type_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_type")), Some(make_factory(0)));
-    type_col.set_fixed_width(50);
-    type_col.set_resizable(true);
-    type_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| a.downcast_ref::<FileRow>().unwrap().is_dir().cmp(&b.downcast_ref::<FileRow>().unwrap().is_dir()).into())));
-    column_view.append_column(&type_col);
-    let current_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_current_name")), Some(make_factory(1)));
-    current_col.set_expand(true);
-    current_col.set_resizable(true);
-    current_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().current_name(), &b.downcast_ref::<FileRow>().unwrap().current_name()).into())));
-    column_view.append_column(&current_col);
-    let future_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_future_name")), Some(make_factory(2)));
-    future_col.set_expand(true);
-    future_col.set_resizable(true);
-    future_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().future_name(), &b.downcast_ref::<FileRow>().unwrap().future_name()).into())));
-    column_view.append_column(&future_col);
-    let path_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_upper_column_path")), Some(make_factory(3)));
-    path_col.set_expand(true);
-    path_col.set_resizable(true);
-    path_col.set_sorter(Some(&gtk::CustomSorter::new(|a, b| natord::compare(&a.downcast_ref::<FileRow>().unwrap().path(), &b.downcast_ref::<FileRow>().unwrap().path()).into())));
-    column_view.append_column(&path_col);
-    let sort_model = gtk::SortListModel::new(Some(file_store.clone()), column_view.sorter());
+
+    // Row: [icon] [name (title) / future name (subtitle)] [spacer] [path (dim)]
+    let factory = gtk::SignalListItemFactory::new();
+    factory.connect_setup(|_, list_item| {
+        let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+        row_box.set_margin_top(6);
+        row_box.set_margin_bottom(6);
+        row_box.set_margin_start(12);
+        row_box.set_margin_end(12);
+
+        let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
+        icon.set_pixel_size(22);
+        icon.set_valign(gtk::Align::Center);
+        row_box.append(&icon);
+
+        let texts = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        texts.set_hexpand(true);
+        texts.set_valign(gtk::Align::Center);
+        let name = gtk::Label::new(None);
+        name.set_xalign(0.0);
+        name.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        name.add_css_class("file-row-name");
+        let future = gtk::Label::new(None);
+        future.set_xalign(0.0);
+        future.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        future.add_css_class("dim-label");
+        texts.append(&name);
+        texts.append(&future);
+        row_box.append(&texts);
+
+        let path = gtk::Label::new(None);
+        path.set_xalign(1.0);
+        path.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
+        path.add_css_class("dim-label");
+        path.set_valign(gtk::Align::Center);
+        path.set_width_chars(20);
+        row_box.append(&path);
+
+        li.set_child(Some(&row_box));
+    });
+    factory.connect_bind(|_, list_item| {
+        let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let row = li.item().and_downcast::<FileRow>().unwrap();
+        let row_box = li.child().and_downcast::<gtk::Box>().unwrap();
+        let icon = row_box.first_child().and_downcast::<gtk::Image>().unwrap();
+        let texts = row_box.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Box>().unwrap();
+        let name = texts.first_child().and_downcast::<gtk::Label>().unwrap();
+        let future = texts.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Label>().unwrap();
+        let path = texts.next_sibling().and_downcast::<gtk::Label>().unwrap();
+
+        if let Some(gicon) = row.gicon() {
+            icon.set_from_gicon(&gicon);
+        }
+        name.set_label(&row.current_name());
+        let future_text = row.future_name();
+        future.set_label(&future_text);
+        future.remove_css_class("future-name-changed");
+        if future_text != row.current_name() {
+            future.add_css_class("future-name-changed");
+        }
+        path.set_label(&row.path());
+    });
+
+    let sort_model = gtk::SortListModel::new(Some(file_store.clone()), None::<gtk::Sorter>);
     let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
-    column_view.set_model(Some(&selection));
+    let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    list_view.set_show_separators(true);
+    list_view.set_single_click_activate(false);
     state.borrow_mut().file_selection = Some(selection.clone());
-    state.borrow_mut().file_sort_model = Some(sort_model);
+    state.borrow_mut().file_sort_model = Some(sort_model.clone());
     // Double-click to open file
     { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
-        gesture.connect_pressed(move |_, n_press, _, _| { if n_press == 2 { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.full_name); } } } }); column_view.add_controller(gesture); }
+        gesture.connect_pressed(move |_, n_press, _, _| { if n_press == 2 { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.full_name); } } } }); list_view.add_controller(gesture); }
     // Right-click to open containing folder
     { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(3);
-        gesture.connect_released(move |_, _, _, _| { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.path); } } }); column_view.add_controller(gesture); }
-    (column_view, file_store, selection)
+        gesture.connect_released(move |_, _, _, _| { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.path); } } }); list_view.add_controller(gesture); }
+    (list_view, file_store, selection, sort_model)
 }
 
-fn build_rule_column_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, file_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> gtk::ColumnView {
-    let column_view = gtk::ColumnView::new(Some(selection.clone()));
-    column_view.set_show_row_separators(true);
-    column_view.set_show_column_separators(true);
-    column_view.set_single_click_activate(false);
-    let make_factory = |col_idx: usize| {
-        let factory = gtk::SignalListItemFactory::new();
-        factory.connect_setup(move |_, list_item| {
-            let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-            let label = gtk::Label::new(None);
-            label.set_xalign(0.0); label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-            label.set_margin_start(6); label.set_margin_end(6);
-            li.set_child(Some(&label));
-        });
-        factory.connect_bind(move |_, list_item| {
-            let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-            let row = li.item().and_downcast::<RuleRow>().unwrap();
-            let label = li.child().and_downcast::<gtk::Label>().unwrap();
-            let text = match col_idx { 0 => row.rule_type_text(), 1 => row.usage_text(), 2 => row.description(), _ => String::new() };
-            label.set_label(&text);
-        });
-        factory
-    };
-    let tool_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_bottom_tool_type")), Some(make_factory(0)));
-    tool_col.set_expand(true); column_view.append_column(&tool_col);
-    let usage_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_bottom_usage_name")), Some(make_factory(1)));
-    usage_col.set_expand(true); column_view.append_column(&usage_col);
-    let desc_col = gtk::ColumnViewColumn::new(Some(&crate::fls!("tree_view_bottom_description")), Some(make_factory(2)));
-    desc_col.set_expand(true); column_view.append_column(&desc_col);
+fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, file_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> (gtk::ListView, gtk::SortListModel) {
+    // Row: [icon] [type (title) / usage (subtitle)]
+    let factory = gtk::SignalListItemFactory::new();
+    factory.connect_setup(|_, list_item| {
+        let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
+        row_box.set_margin_top(6);
+        row_box.set_margin_bottom(6);
+        row_box.set_margin_start(12);
+        row_box.set_margin_end(12);
+
+        let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
+        icon.set_pixel_size(22);
+        icon.set_valign(gtk::Align::Center);
+        row_box.append(&icon);
+
+        let texts = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        texts.set_hexpand(true);
+        texts.set_valign(gtk::Align::Center);
+        let rtype = gtk::Label::new(None);
+        rtype.set_xalign(0.0);
+        rtype.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        rtype.add_css_class("file-row-name");
+        let usage = gtk::Label::new(None);
+        usage.set_xalign(0.0);
+        usage.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        usage.add_css_class("dim-label");
+        texts.append(&rtype);
+        texts.append(&usage);
+        row_box.append(&texts);
+
+        li.set_child(Some(&row_box));
+    });
+    factory.connect_bind(|_, list_item| {
+        let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let row = li.item().and_downcast::<RuleRow>().unwrap();
+        let row_box = li.child().and_downcast::<gtk::Box>().unwrap();
+        let icon = row_box.first_child().and_downcast::<gtk::Image>().unwrap();
+        let texts = row_box.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Box>().unwrap();
+        let rtype = texts.first_child().and_downcast::<gtk::Label>().unwrap();
+        let usage = texts.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Label>().unwrap();
+
+        if let Some(gicon) = row.gicon() {
+            icon.set_from_gicon(&gicon);
+        }
+        rtype.set_label(&row.rule_type_text());
+        usage.set_label(&row.usage_text());
+    });
+
+    let sort_model = gtk::SortListModel::new(Some(rule_store.clone()), None::<gtk::Sorter>);
+    let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    list_view.set_show_separators(true);
+    list_view.set_single_click_activate(false);
     // Double-click to edit rule
     { let st = state.clone(); let es = editor_state.clone(); let rs = rule_store.clone();
       let fs = file_store.clone(); let gs = gui_state.clone(); let w = window.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
       gesture.connect_released(move |_, n_press, _, _| { if n_press >= 2 {
           let idx = st.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(0);
           super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &fs, &gs, Some(idx));
-      }}); column_view.add_controller(gesture); }
-    column_view
+      }}); list_view.add_controller(gesture); }
+    (list_view, sort_model)
 }

@@ -32,6 +32,7 @@ pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
             &crate::rule::rules::rule_type_to_string(rule.rule_type),
             &crate::rule::rules::rule_place_to_string(rule.rule_place),
             &rule.rule_description,
+            crate::rule::rules::rule_type_icon(rule.rule_type),
         );
         store.append(&row);
     }

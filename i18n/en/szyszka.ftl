@@ -32,6 +32,15 @@ tree_view_bottom_tool_type = Tool Type
 tree_view_bottom_usage_name = Usage Name
 tree_view_bottom_description = Description
 
+# Sort options (list view)
+sort_by = Sort by
+sort_name = Name
+sort_future_name = New name
+sort_path = Path
+sort_type = Type
+sort_usage = Usage
+sort_descending = Descending
+
 # Settings
 settings_language_label = Language
 settings_theme = Theme

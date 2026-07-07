@@ -23,6 +23,8 @@ mod imp {
         pub size_text: RefCell<String>,
         #[property(get, set)]
         pub date_text: RefCell<String>,
+        #[property(get, set)]
+        pub gicon: RefCell<Option<gio::Icon>>,
     }
 
     #[glib::object_subclass]
@@ -50,6 +52,13 @@ glib::wrapper! {
 
 impl FileRow {
     pub fn new(selected: bool, is_dir: bool, current_name: &str, future_name: &str, path: &str, size_text: &str, date_text: &str) -> Self {
+        // Derive a native content-type icon (no filesystem I/O).
+        let gicon: gio::Icon = if is_dir {
+            gio::ThemedIcon::new("folder").upcast()
+        } else {
+            let (content_type, _) = gio::content_type_guess(Some(current_name), &[]);
+            gio::content_type_get_icon(&content_type)
+        };
         glib::Object::builder()
             .property("selected", selected)
             .property("is-dir", is_dir)
@@ -58,6 +67,7 @@ impl FileRow {
             .property("path", path)
             .property("size-text", size_text)
             .property("date-text", date_text)
+            .property("gicon", gicon)
             .build()
     }
 }
@@ -78,6 +88,8 @@ mod imp_rule {
         pub usage_text: RefCell<String>,
         #[property(get, set)]
         pub description: RefCell<String>,
+        #[property(get, set)]
+        pub gicon: RefCell<Option<gio::Icon>>,
     }
 
     #[glib::object_subclass]
@@ -104,12 +116,14 @@ glib::wrapper! {
 }
 
 impl RuleRow {
-    pub fn new(selected: bool, rule_type_text: &str, usage_text: &str, description: &str) -> Self {
+    pub fn new(selected: bool, rule_type_text: &str, usage_text: &str, description: &str, icon_name: &str) -> Self {
+        let gicon: gio::Icon = gio::ThemedIcon::new(icon_name).upcast();
         glib::Object::builder()
             .property("selected", selected)
             .property("rule-type-text", rule_type_text)
             .property("usage-text", usage_text)
             .property("description", description)
+            .property("gicon", gicon)
             .build()
     }
 }
