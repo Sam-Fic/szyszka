@@ -174,19 +174,26 @@ pub fn build_gtk_app(
     css_provider.load_from_data(
         ".future-name-changed { color: @success_color; }
          .list-card-header {
-             padding: 6px 10px;
-             border-bottom: 1px solid @borders;
+             padding: 8px;
          }
-         .list-card-header > * { margin: 0 2px; }
-         listview row {
-             padding: 0;
-             border-radius: 0;
+         .list-card-header > * { margin: 0; }
+         listview row { padding: 0; }
+         listview row:hover { background: transparent; }
+         listview row:active { background: transparent; }
+         .list-row {
+             background: transparent;
+             border-radius: 8px;
+             padding: 2px 10px;
+         }
+         listview row:hover .list-row {
+             background: alpha(@window_fg_color, 0.06);
          }
          listview row:selected {
-             background: @accent_bg_color;
+             background: transparent;
+             color: @window_fg_color;
          }
-         listview row:selected label {
-             color: @accent_fg_color;
+         listview row:selected .list-row {
+             background: alpha(@window_fg_color, 0.22);
          }
          .drop-hover {
              outline: 2px solid @accent_bg_color;
@@ -282,12 +289,13 @@ pub fn build_gtk_app(
     let main_box = gtk::Box::new(gtk::Orientation::Vertical, 12);
     main_box.set_margin_start(12);
     main_box.set_margin_end(12);
-    main_box.set_margin_top(12);
+    main_box.set_margin_top(0);
     main_box.set_margin_bottom(12);
 
     // Progress banner
     let progress_banner = adw::Banner::new(&crate::fls!("dialog_loading"));
     progress_banner.set_revealed(false);
+    progress_banner.set_visible(false);
     main_box.append(&progress_banner);
 
     // ===== Files card =====
@@ -642,8 +650,10 @@ pub fn build_gtk_app(
             // Banner (indeterminate text messages)
             let title = gs.borrow().message_dialog_title.clone();
             let active = !title.is_empty();
-            pb.set_revealed(active && !progress_active);
-            if active && !progress_active {
+            let show = active && !progress_active;
+            pb.set_revealed(show);
+            pb.set_visible(show);
+            if show {
                 pb.set_title(&title);
             }
             glib::ControlFlow::Continue
@@ -1044,10 +1054,11 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
     factory.connect_setup(|_, list_item| {
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-        row_box.set_margin_top(6);
-        row_box.set_margin_bottom(6);
-        row_box.set_margin_start(12);
-        row_box.set_margin_end(12);
+        row_box.add_css_class("list-row");
+        row_box.set_margin_top(3);
+        row_box.set_margin_bottom(3);
+        row_box.set_margin_start(10);
+        row_box.set_margin_end(10);
 
         let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
         icon.set_pixel_size(22);
@@ -1105,7 +1116,7 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
     let sort_model = gtk::SortListModel::new(Some(file_store.clone()), None::<gtk::Sorter>);
     let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
     let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
-    list_view.set_show_separators(true);
+    list_view.set_show_separators(false);
     list_view.set_single_click_activate(false);
     state.borrow_mut().file_selection = Some(selection.clone());
     state.borrow_mut().file_sort_model = Some(sort_model.clone());
@@ -1124,10 +1135,11 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
     factory.connect_setup(|_, list_item| {
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-        row_box.set_margin_top(6);
-        row_box.set_margin_bottom(6);
-        row_box.set_margin_start(12);
-        row_box.set_margin_end(12);
+        row_box.add_css_class("list-row");
+        row_box.set_margin_top(3);
+        row_box.set_margin_bottom(3);
+        row_box.set_margin_start(10);
+        row_box.set_margin_end(10);
 
         let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
         icon.set_pixel_size(22);
@@ -1169,7 +1181,7 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
 
     let sort_model = gtk::SortListModel::new(Some(rule_store.clone()), None::<gtk::Sorter>);
     let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
-    list_view.set_show_separators(true);
+    list_view.set_show_separators(false);
     list_view.set_single_click_activate(false);
     // Double-click to edit rule
     { let st = state.clone(); let es = editor_state.clone(); let rs = rule_store.clone();
