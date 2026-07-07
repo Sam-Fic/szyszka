@@ -174,7 +174,7 @@ pub fn build_gtk_app(
     css_provider.load_from_data(
         ".future-name-changed { color: @success_color; }
          .list-card-header {
-             padding: 8px;
+             padding: 9px;
          }
          .list-card-header > * { margin: 0; }
          listview row { padding: 0; }
@@ -426,6 +426,8 @@ pub fn build_gtk_app(
     let file_status = gtk::Label::new(Some(&crate::fls!("upper_files_folders_label")));
     file_status.add_css_class("heading");
     file_status.set_xalign(0.0);
+    file_status.set_valign(gtk::Align::Center);
+    file_status.set_margin_start(8);
     file_status.set_hexpand(true);
     let file_header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     file_header.add_css_class("list-card-header");
@@ -501,6 +503,8 @@ pub fn build_gtk_app(
     let rule_status = gtk::Label::new(Some(&crate::fls!("bottom_rule_label_rules")));
     rule_status.add_css_class("heading");
     rule_status.set_xalign(0.0);
+    rule_status.set_valign(gtk::Align::Center);
+    rule_status.set_margin_start(8);
     rule_status.set_hexpand(true);
     let rule_header = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     rule_header.add_css_class("list-card-header");
@@ -698,9 +702,7 @@ pub fn build_gtk_app(
         let gs = gui_state.clone();
         let window = window.clone();
         add_folders_btn.connect_clicked(move |_| {
-            if crate::connect::files::pick_folders_into_state(&state, &gs) {
-                show_add_folders_dialog(&window, &state, &file_store, &gs);
-            }
+            crate::connect::files::pick_folders_into_state(&state, &file_store, &gs, &window);
         });
     }
 
@@ -1015,7 +1017,7 @@ pub fn show_select_custom_dialog(window: &adw::ApplicationWindow, file_store: &g
     dialog.present(Some(window));
 }
 
-fn show_add_folders_dialog(window: &adw::ApplicationWindow, state: &SharedState, file_store: &gio::ListStore, gui_state: &SharedGuiState) {
+pub fn show_add_folders_dialog(window: &adw::ApplicationWindow, state: &SharedState, file_store: &gio::ListStore, gui_state: &SharedGuiState) {
     let dialog = adw::AlertDialog::builder()
         .heading(&crate::fls!("dialog_add_folders_title"))
         .body(&crate::fls!("dialog_add_folders_body"))
