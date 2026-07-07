@@ -195,9 +195,13 @@ pub fn build_gtk_app(
          listview row:selected .list-row {
              background: alpha(@window_fg_color, 0.22);
          }
-         .drop-area:drop(active) {
-             border: 2px solid @accent_bg_color;
+         .drop-area {
+             border: 2px solid transparent;
              border-radius: 8px;
+             margin: 0 3px 3px 3px;
+         }
+         .drop-area:drop(active) {
+             border-color: @accent_bg_color;
          }"
     );
     // Will be added to display after window is realized
