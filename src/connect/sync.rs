@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use gio::prelude::ListModelExt;
 use glib::prelude::*;
 use humansize::{format_size, BINARY};
 
@@ -8,10 +9,9 @@ use crate::ui::state_ui::SharedGuiState;
 
 pub fn sync_files(store: &gio::ListStore, state: &SharedState) {
     let state_ref = state.borrow();
-    store.remove_all();
-    for (idx, item) in state_ref.files.iter().enumerate() {
+    let items: Vec<glib::Object> = state_ref.files.iter().enumerate().map(|(idx, item)| {
         let selected = state_ref.file_selected.get(idx).copied().unwrap_or(false);
-        let row = FileRow::new(
+        FileRow::new(
             selected,
             item.is_dir,
             &item.name,
@@ -19,25 +19,24 @@ pub fn sync_files(store: &gio::ListStore, state: &SharedState) {
             &item.path,
             &format_size(item.size, BINARY),
             &item.date,
-        );
-        store.append(&row);
-    }
+        ).upcast::<glib::Object>()
+    }).collect();
+    store.splice(0, store.n_items(), &items);
 }
 
 pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
     let state_ref = state.borrow();
-    store.remove_all();
-    for (idx, rule) in state_ref.rules.rules.iter().enumerate() {
+    let items: Vec<glib::Object> = state_ref.rules.rules.iter().enumerate().map(|(idx, rule)| {
         let selected = state_ref.rule_selected.get(idx).copied().unwrap_or(false);
-        let row = RuleRow::new(
+        RuleRow::new(
             selected,
             &crate::rule::rules::rule_type_to_string(rule.rule_type),
             &crate::rule::rules::rule_place_to_string(rule.rule_place),
             &rule.rule_description,
             crate::rule::rules::rule_type_icon(rule.rule_type),
-        );
-        store.append(&row);
-    }
+        ).upcast::<glib::Object>()
+    }).collect();
+    store.splice(0, store.n_items(), &items);
 }
 
 /// Read GTK MultiSelection state and update state.file_selected.
