@@ -64,6 +64,10 @@ pub fn build_gtk_app(
          }
          columnview > listview > row:selected label {
              color: @accent_fg_color;
+         }
+         .drop-hover {
+             outline: 2px solid @accent_bg_color;
+             outline-offset: -2px;
          }"
     );
     // Will be added to display after window is realized
@@ -187,6 +191,84 @@ pub fn build_gtk_app(
     file_stack.add_named(&file_empty_page, Some("empty"));
     file_stack.set_visible_child_name("empty");
     main_box.append(&file_stack);
+
+    // === Drag and drop to add files/folders ===
+    {
+        use std::path::PathBuf;
+        let state = state.clone();
+        let file_store = file_store.clone();
+        let gs = gui_state.clone();
+        // Accept GdkFileList (the format GNOME/Nautilus and other GTK file
+        // managers provide when dragging files) plus a single GFile.
+        let drop_target = gtk::DropTarget::new(gtk::gdk::FileList::static_type(), gtk::gdk::DragAction::COPY);
+        drop_target.set_types(&[gtk::gdk::FileList::static_type(), gio::File::static_type()]);
+
+        let hover_stack = file_stack.clone();
+        drop_target.connect_enter(move |_, _, _| {
+            hover_stack.add_css_class("drop-hover");
+            gtk::gdk::DragAction::COPY
+        });
+        let hover_stack = file_stack.clone();
+        drop_target.connect_leave(move |_| {
+            hover_stack.remove_css_class("drop-hover");
+        });
+
+        let drop_stack = file_stack.clone();
+        let drop_window = window.clone();
+        drop_target.connect_drop(move |_, value, _, _| {
+            let mut files: Vec<PathBuf> = Vec::new();
+            let mut folders: Vec<PathBuf> = Vec::new();
+
+            // GdkFileList: preferred format from GTK/Nautilus file managers
+            if let Ok(list) = value.get::<gtk::gdk::FileList>() {
+                for f in list.files() {
+                    if let Some(p) = f.path() {
+                        if p.is_dir() { folders.push(p); } else { files.push(p); }
+                    }
+                }
+            }
+            // Single GFile
+            else if let Ok(file) = value.get::<gio::File>() {
+                if let Some(p) = file.path() {
+                    if p.is_dir() { folders.push(p); } else { files.push(p); }
+                }
+            }
+            // text/uri-list: fallback used by some (non-GTK) drag sources
+            else if let Ok(uris) = value.get::<String>() {
+                for uri in uris.split(|c| c == '\r' || c == '\n').filter(|s| !s.is_empty()) {
+                    let file = gio::File::for_uri(uri);
+                    if let Some(p) = file.path() {
+                        if p.is_dir() { folders.push(p); } else { files.push(p); }
+                    }
+                }
+            }
+
+            if files.is_empty() && folders.is_empty() {
+                return false;
+            }
+
+            // Files are added immediately, just like the "Add files" button.
+            if !files.is_empty() {
+                let items = crate::files::sort_files(files);
+                crate::connect::files::start_async_scan(&items, &state, &file_store, &gs, "Adding files…");
+            }
+
+            // Folders prompt the same "configure scan options" dialog as the
+            // "Add folders" button, instead of being scanned automatically.
+            if !folders.is_empty() {
+                let display: Vec<String> = folders.iter().map(|p| p.display().to_string()).collect();
+                gs.borrow_mut().add_folder_picked_paths = display;
+                state.borrow_mut().pending_folders = folders;
+                show_add_folders_dialog(&drop_window, &state, &file_store, &gs);
+            }
+
+            drop_stack.remove_css_class("drop-hover");
+            true
+        });
+        // Attach to the top-level window so the controller reliably receives
+        // drag events anywhere in the app.
+        window.add_controller(drop_target);
+    }
 
     // File action bar (bottom of file list)
     let file_action_bar = gtk::Box::new(gtk::Orientation::Horizontal, 4);
