@@ -3,20 +3,25 @@
 Szyszka is a simple but powerful and fast bulk file renamer.
 
 ## Features
-- Great performance
+- Great performance (multithreaded file search via `rayon`/`jwalk`)
 - Available for Linux, Mac and Windows
-- GUI created with GTK 4 and libadwaita (GNOME HIG compliant)
+- Modern GUI built with GTK 4 and libadwaita (GNOME HIG compliant)
+- Add files and folders by browsing, dragging and dropping, or via the command line
 - Multiple rules which can be freely combined:
-  - Replace text
+  - Replace text (supports regular expressions)
   - Trim text
   - Add text
-  - Add numbers
+  - Add numbers (including per-folder counters)
   - Purge text
   - Change letters to upper/lowercase
-  - Custom rules
+  - Normalize unicode/whitespace
+  - Custom rules (macro parser with optional numbers)
 - Save rules to be able to use them later
-- Ability to edit, reorder rules and results
-- Handle even hundreds thousands of records
+- Ability to edit, reorder and sort rules and results
+- Empty state hints and a progress dialog for renaming operations
+- Per-app preferences: language and theme (light/dark)
+- Available in 14 languages (ar, cs, de, en, es, fr, it, ja, pl, pt, ru, sv, uk, zh)
+- Handle even hundreds of thousands of records
 
 ## Requirements
 ### Linux
@@ -65,6 +70,30 @@ cargo install szyszka
 szyszka is available on Gentoo's GURU overlay
 ```
 emerge -av gui-apps/szyszka
+```
+
+### Build from source
+Requirements from the [Requirements](#requirements) section must be installed first.
+```shell
+# Debug build
+cargo build
+
+# Release build
+cargo build --release
+
+# Run directly
+cargo run
+```
+
+This project also ships a `justfile` with common tasks:
+```shell
+just build      # cargo build
+just buildr     # cargo build --release
+just run        # cargo run
+just runr       # cargo run --release
+just clip       # cargo clippy --fix
+just fix        # normalize dashes + cargo fmt + clippy
+just upgrade    # cargo update
 ```
 
 ## Alternatives

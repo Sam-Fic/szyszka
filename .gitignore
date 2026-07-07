@@ -21,7 +21,6 @@ TestSuite*
 DO_NOT_RENAME/
 ___*
 
-*.png
 *.tmp
 *.bak
 *.log

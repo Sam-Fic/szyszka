@@ -339,6 +339,28 @@ pub fn show_rule_editor(
         NotebookTab::Trim => "trim", NotebookTab::Normalize => "normalize",
     });
 
+    // Sync current_tab when user switches sidebar tabs.
+    {
+        let es = editor_state.clone();
+        stack.connect_notify_local(Some("visible-child"), move |stack, _| {
+            let name = stack.visible_child_name()
+                .map(|n| n.as_str().to_owned())
+                .unwrap_or_default();
+            let tab = match name.as_str() {
+                "custom" => NotebookTab::Custom,
+                "case" => NotebookTab::CaseSize,
+                "purge" => NotebookTab::Purge,
+                "add_number" => NotebookTab::AddNumber,
+                "add_text" => NotebookTab::AddText,
+                "replace" => NotebookTab::Replace,
+                "trim" => NotebookTab::Trim,
+                "normalize" => NotebookTab::Normalize,
+                _ => return,
+            };
+            es.borrow_mut().current_tab = tab;
+        });
+    }
+
     // Example panel - use adw::PreferencesGroup for native card style
     let example_group = adw::PreferencesGroup::builder()
         .title(&crate::fls!("rule_editor_example"))
