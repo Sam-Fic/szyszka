@@ -183,7 +183,7 @@ pub fn build_gtk_app(
          .list-row {
              background: transparent;
              border-radius: 8px;
-             padding: 2px 10px;
+             padding: 9px 10px;
          }
          listview row:hover .list-row {
              background: alpha(@window_fg_color, 0.06);
@@ -195,9 +195,9 @@ pub fn build_gtk_app(
          listview row:selected .list-row {
              background: alpha(@window_fg_color, 0.22);
          }
-         .drop-hover {
-             outline: 2px solid @accent_bg_color;
-             outline-offset: -2px;
+         .drop-area:drop(active) {
+             border: 2px solid @accent_bg_color;
+             border-radius: 8px;
          }"
     );
     // Will be added to display after window is realized
@@ -211,8 +211,8 @@ pub fn build_gtk_app(
     start_btn.set_sensitive(false);
     header.pack_start(&start_btn);
 
-    let add_files_btn = icon_button(&crate::fls!("upper_add_files_button"), "document-open-symbolic");
-    let add_folders_btn = icon_button(&crate::fls!("upper_add_folders_button"), "folder-open-symbolic");
+    let add_files_btn = header_button("text-x-generic-symbolic", &crate::fls!("upper_add_files_button"));
+    let add_folders_btn = header_button("folder-symbolic", &crate::fls!("upper_add_folders_button"));
 
     // Hamburger menu
     let menu_model = gio::Menu::new();
@@ -314,6 +314,7 @@ pub fn build_gtk_app(
     let file_stack = gtk::Stack::new();
     file_stack.set_vexpand(true);
     file_stack.set_overflow(gtk::Overflow::Hidden);
+    file_stack.add_css_class("drop-area");
     file_stack.add_named(&file_scroll, Some("list"));
     file_stack.add_named(&file_empty_page, Some("empty"));
     file_stack.set_visible_child_name("empty");
@@ -329,17 +330,6 @@ pub fn build_gtk_app(
         let drop_target = gtk::DropTarget::new(gtk::gdk::FileList::static_type(), gtk::gdk::DragAction::COPY);
         drop_target.set_types(&[gtk::gdk::FileList::static_type(), gio::File::static_type()]);
 
-        let hover_stack = file_stack.clone();
-        drop_target.connect_enter(move |_, _, _| {
-            hover_stack.add_css_class("drop-hover");
-            gtk::gdk::DragAction::COPY
-        });
-        let hover_stack = file_stack.clone();
-        drop_target.connect_leave(move |_| {
-            hover_stack.remove_css_class("drop-hover");
-        });
-
-        let drop_stack = file_stack.clone();
         let drop_window = window.clone();
         drop_target.connect_drop(move |_, value, _, _| {
             let mut files: Vec<PathBuf> = Vec::new();
@@ -388,12 +378,11 @@ pub fn build_gtk_app(
                 show_add_folders_dialog(&drop_window, &state, &file_store, &gs);
             }
 
-            drop_stack.remove_css_class("drop-hover");
             true
         });
-        // Attach to the top-level window so the controller reliably receives
-        // drag events anywhere in the app.
-        window.add_controller(drop_target);
+        // Attach to the file list stack so GTK applies the native
+        // :drop(active) state automatically during drag-hover.
+        file_stack.add_controller(drop_target);
     }
 
     // Files card header buttons
@@ -1057,8 +1046,8 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         row_box.add_css_class("list-row");
-        row_box.set_margin_top(3);
-        row_box.set_margin_bottom(3);
+        row_box.set_margin_top(2);
+        row_box.set_margin_bottom(2);
         row_box.set_margin_start(10);
         row_box.set_margin_end(10);
 
@@ -1067,18 +1056,24 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
         icon.set_valign(gtk::Align::Center);
         row_box.append(&icon);
 
-        let texts = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        let texts = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         texts.set_hexpand(true);
         texts.set_valign(gtk::Align::Center);
         let name = gtk::Label::new(None);
         name.set_xalign(0.0);
-        name.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        name.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
         name.add_css_class("file-row-name");
+        let arrow = gtk::Label::new(Some("→"));
+        arrow.set_valign(gtk::Align::Center);
+        arrow.add_css_class("dim-label");
+        arrow.set_visible(false);
         let future = gtk::Label::new(None);
         future.set_xalign(0.0);
-        future.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        future.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
         future.add_css_class("dim-label");
+        future.set_visible(false);
         texts.append(&name);
+        texts.append(&arrow);
         texts.append(&future);
         row_box.append(&texts);
 
@@ -1096,21 +1091,36 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row = li.item().and_downcast::<FileRow>().unwrap();
         let row_box = li.child().and_downcast::<gtk::Box>().unwrap();
+        // First row: remove top gap so the gray box touches the list area top.
+        if li.position() == 0 {
+            row_box.set_margin_top(0);
+        } else {
+            row_box.set_margin_top(2);
+        }
         let icon = row_box.first_child().and_downcast::<gtk::Image>().unwrap();
         let texts = row_box.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Box>().unwrap();
         let name = texts.first_child().and_downcast::<gtk::Label>().unwrap();
-        let future = texts.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Label>().unwrap();
+        let arrow = name.next_sibling().and_downcast::<gtk::Label>().unwrap();
+        let future = arrow.next_sibling().and_downcast::<gtk::Label>().unwrap();
         let path = texts.next_sibling().and_downcast::<gtk::Label>().unwrap();
 
         if let Some(gicon) = row.gicon() {
             icon.set_from_gicon(&gicon);
         }
-        name.set_label(&row.current_name());
+        let current = row.current_name();
         let future_text = row.future_name();
+        name.set_label(&current);
         future.set_label(&future_text);
-        future.remove_css_class("future-name-changed");
-        if future_text != row.current_name() {
+        if future_text != current {
+            arrow.set_visible(true);
+            future.set_visible(true);
+            future.remove_css_class("dim-label");
             future.add_css_class("future-name-changed");
+        } else {
+            arrow.set_visible(false);
+            future.set_visible(false);
+            future.add_css_class("dim-label");
+            future.remove_css_class("future-name-changed");
         }
         path.set_label(&row.path());
     });
@@ -1138,8 +1148,8 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row_box = gtk::Box::new(gtk::Orientation::Horizontal, 10);
         row_box.add_css_class("list-row");
-        row_box.set_margin_top(3);
-        row_box.set_margin_bottom(3);
+        row_box.set_margin_top(2);
+        row_box.set_margin_bottom(2);
         row_box.set_margin_start(10);
         row_box.set_margin_end(10);
 
