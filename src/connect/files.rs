@@ -10,10 +10,19 @@ use crate::state::SharedState;
 use crate::ui::state_ui::SharedGuiState;
 
 pub fn pick_files_and_add(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState) {
-    let files = rfd::FileDialog::new().set_title("Add files").pick_files();
-    let Some(files) = files else { return };
-    let sorted = sort_files(files);
-    start_async_scan(&sorted, state, store, gui_state, "Adding files…");
+    let state = state.clone();
+    let store = store.clone();
+    let gui_state = gui_state.clone();
+    glib::spawn_future_local(async move {
+        let files = rfd::AsyncFileDialog::new()
+            .set_title("Add files")
+            .pick_files()
+            .await;
+        let Some(files) = files else { return };
+        let paths: Vec<PathBuf> = files.into_iter().map(|f| f.path().into()).collect();
+        let sorted = sort_files(paths);
+        start_async_scan(&sorted, &state, &store, &gui_state, "Adding files…");
+    });
 }
 
 pub fn add_cli_paths(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, paths: crate::cli_arguments::CliPaths) {
@@ -38,17 +47,26 @@ pub fn add_cli_paths(state: &SharedState, store: &gio::ListStore, gui_state: &Sh
     }
 }
 
-pub fn pick_folders_into_state(state: &SharedState, gui_state: &SharedGuiState) -> bool {
-    let folders = rfd::FileDialog::new().set_title("Add folders").pick_folders();
-    let Some(folders) = folders else { return false };
-    if folders.is_empty() {
-        return false;
-    }
+pub fn pick_folders_into_state(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) {
+    let state = state.clone();
+    let store = store.clone();
+    let gui_state = gui_state.clone();
+    let window = window.clone();
+    glib::spawn_future_local(async move {
+        let folders = rfd::AsyncFileDialog::new()
+            .set_title("Add folders")
+            .pick_folders()
+            .await;
+        let Some(folders) = folders else { return };
+        if folders.is_empty() { return; }
 
-    let display: Vec<String> = folders.iter().map(|p| p.display().to_string()).collect();
-    gui_state.borrow_mut().add_folder_picked_paths = display;
-    state.borrow_mut().pending_folders = folders;
-    true
+        let paths: Vec<PathBuf> = folders.into_iter().map(|f| f.path().into()).collect();
+        let display: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
+        gui_state.borrow_mut().add_folder_picked_paths = display;
+        state.borrow_mut().pending_folders = paths;
+
+        crate::ui::main_window::show_add_folders_dialog(&window, &state, &store, &gui_state);
+    });
 }
 
 pub fn confirm_add_folders(state: &SharedState, store: &gio::ListStore, gui_state: &SharedGuiState, scan_inside: bool, ignore_folders: bool) {
