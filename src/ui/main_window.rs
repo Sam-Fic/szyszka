@@ -1199,7 +1199,18 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
             icon.set_from_gicon(&gicon);
         }
         rtype.set_label(&row.rule_type_text());
-        usage.set_label(&row.usage_text());
+        let ut = row.usage_text();
+        let desc = row.description();
+        if ut == crate::fls!("rule_place_none") && !desc.is_empty() {
+            // Custom rules: show the actual rule text instead of "不适用".
+            usage.set_label(&desc);
+            usage.set_visible(true);
+        } else if !ut.is_empty() {
+            usage.set_label(&ut);
+            usage.set_visible(true);
+        } else {
+            usage.set_visible(false);
+        }
     });
 
     let sort_model = gtk::SortListModel::new(Some(rule_store.clone()), None::<gtk::Sorter>);
