@@ -198,7 +198,7 @@ pub fn build_gtk_app(
          .drop-area {
              border: 2px solid transparent;
              border-radius: 8px;
-             margin: 0 3px 3px 3px;
+             margin-bottom: 3px;
          }
          .drop-area:drop(active) {
              border-color: @accent_bg_color;
@@ -1052,8 +1052,8 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
         row_box.add_css_class("list-row");
         row_box.set_margin_top(2);
         row_box.set_margin_bottom(2);
-        row_box.set_margin_start(10);
-        row_box.set_margin_end(10);
+        row_box.set_margin_start(9);
+        row_box.set_margin_end(9);
 
         let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
         icon.set_pixel_size(22);
@@ -1154,15 +1154,15 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
         row_box.add_css_class("list-row");
         row_box.set_margin_top(2);
         row_box.set_margin_bottom(2);
-        row_box.set_margin_start(10);
-        row_box.set_margin_end(10);
+        row_box.set_margin_start(9);
+        row_box.set_margin_end(9);
 
         let icon = gtk::Image::from_icon_name("text-x-generic-symbolic");
         icon.set_pixel_size(22);
         icon.set_valign(gtk::Align::Center);
         row_box.append(&icon);
 
-        let texts = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        let texts = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         texts.set_hexpand(true);
         texts.set_valign(gtk::Align::Center);
         let rtype = gtk::Label::new(None);
@@ -1170,8 +1170,9 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
         rtype.set_ellipsize(gtk::pango::EllipsizeMode::End);
         rtype.add_css_class("file-row-name");
         let usage = gtk::Label::new(None);
-        usage.set_xalign(0.0);
-        usage.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        usage.set_xalign(1.0);
+        usage.set_hexpand(true);
+        usage.set_ellipsize(gtk::pango::EllipsizeMode::Middle);
         usage.add_css_class("dim-label");
         texts.append(&rtype);
         texts.append(&usage);
@@ -1183,6 +1184,12 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
         let li = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let row = li.item().and_downcast::<RuleRow>().unwrap();
         let row_box = li.child().and_downcast::<gtk::Box>().unwrap();
+        // First row: remove top gap so the gray box touches the list area top.
+        if li.position() == 0 {
+            row_box.set_margin_top(0);
+        } else {
+            row_box.set_margin_top(2);
+        }
         let icon = row_box.first_child().and_downcast::<gtk::Image>().unwrap();
         let texts = row_box.first_child().and_then(|w| w.next_sibling()).and_downcast::<gtk::Box>().unwrap();
         let rtype = texts.first_child().and_downcast::<gtk::Label>().unwrap();
