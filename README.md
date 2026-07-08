@@ -23,6 +23,10 @@ Szyszka is a simple but powerful and fast bulk file renamer.
 - Available in 14 languages (ar, cs, de, en, es, fr, it, ja, pl, pt, ru, sv, uk, zh)
 - Handle even hundreds of thousands of records
 
+## Screenshot
+
+![Szyszka](screenshot/image.png)
+
 ## Requirements
 ### Linux
 You need to install GTK 4 and libadwaita development libraries.
