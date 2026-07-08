@@ -143,13 +143,13 @@ pub fn rule_type_to_string(rule_type: RuleType) -> String {
 pub fn rule_type_icon(rule_type: RuleType) -> &'static str {
     match rule_type {
         RuleType::Custom => "document-edit-symbolic",
-        RuleType::CaseSize => "change-case-symbolic",
-        RuleType::Purge => "user-trash-symbolic",
-        RuleType::AddText => "insert-text-symbolic",
+        RuleType::CaseSize => "xsi-text-case-symbolic",
+        RuleType::Purge => "edit-clear-all-symbolic",
+        RuleType::AddText => "edit-paste-symbolic",
         RuleType::Trim => "edit-cut-symbolic",
         RuleType::Replace => "edit-find-replace-symbolic",
-        RuleType::AddNumber => "format-number-symbolic",
-        RuleType::Normalize => "text-x-generic-symbolic",
+        RuleType::AddNumber => "view-list-ordered-symbolic",
+        RuleType::Normalize => "format-text-plaintext-symbolic",
     }
 }
 
