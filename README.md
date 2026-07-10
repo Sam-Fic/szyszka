@@ -1,5 +1,9 @@
 # Szyszka
 
+<div align="center">
+  <img src="data/icons/com.github.samfic.szyszka.svg" alt="Szyszka" width="128" height="128">
+</div>
+
 Szyszka is a simple but powerful and fast bulk file renamer.
 
 ## Features
@@ -52,7 +56,7 @@ The released zip file contains all dependencies, so it works out of the box on W
 
 ## Installation
 ### Precompiled Binaries
-Available at https://github.com/qarmin/szyszka/releases
+Available at https://github.com/Sam-Fic/szyszka/releases
 
 ### Snap
 https://snapcraft.io/szyszka  

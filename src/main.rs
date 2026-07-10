@@ -40,7 +40,7 @@ fn main() -> glib::ExitCode {
     let _ = gtk::init();
 
     let app = adw::Application::builder()
-        .application_id("pl.Qarmin.Szyszka")
+        .application_id("com.github.samfic.szyszka")
         .build();
 
     let current_window: Rc<RefCell<Option<adw::ApplicationWindow>>> = Rc::new(RefCell::new(None));

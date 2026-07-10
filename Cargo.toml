@@ -3,12 +3,12 @@
 [package]
 name = "szyszka"
 version = "3.0.0"
-authors = ["Rafał Mikrut <mikrutrafal@protonmail.com>"]
+authors = ["Rafał Mikrut <mikrutrafal@protonmail.com>", "Sam-Fic <samfic@foxmail.com>"]
 edition = "2021"
 description = "Fast, powerful and easy to use file renamer (GTK/Adwaita port)"
 license = "MIT"
-homepage = "https://github.com/qarmin/szyszka"
-repository = "https://github.com/qarmin/szyszka"
+homepage = "https://github.com/Sam-Fic/szyszka"
+repository = "https://github.com/Sam-Fic/szyszka"
 rust-version = "1.92.0"
 build = "build.rs"
 
