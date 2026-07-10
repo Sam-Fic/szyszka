@@ -1,4 +1,4 @@
-name: 📦 Flatpak Release
+name: 🚀 Release
 
 on:
   push:
@@ -10,14 +10,14 @@ permissions:
 
 jobs:
   flatpak:
-    name: Flatpak Bundle
+    name: 📦 Flatpak Bundle
     runs-on: ubuntu-latest
     container:
       image: bilelmoussaoui/flatpak-github-actions:gnome-50
       options: --privileged
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -43,8 +43,85 @@ jobs:
           flatpak build-bundle repo szyszka-${VERSION}.flatpak com.github.samfic.szyszka
           ls -lh szyszka-*.flatpak
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: szyszka-${{ steps.version.outputs.VERSION }}-flatpak
+          path: szyszka-*.flatpak
+
+  windows:
+    name: 🏁 Windows Binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install GTK dependencies (MSYS2)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gtk4
+            mingw-w64-x86_64-libadwaita
+            mingw-w64-x86_64-pkgconf
+
+      - name: Setup rust version
+        run: rustup default 1.96.1
+
+      - name: Build Release
+        run: |
+          cargo build --release
+          mv target/release/szyszka.exe windows_szyszka.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: szyszka-windows
+          path: windows_szyszka.exe
+
+  macos:
+    name: 🍎 macOS Binary
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          brew install gtk4 libadwaita pkg-config
+
+      - name: Setup rust version
+        run: rustup default 1.96.1
+
+      - name: Build Release
+        run: |
+          cargo build --release
+          mv target/release/szyszka mac_szyszka
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: szyszka-macos
+          path: mac_szyszka
+
+  release:
+    name: 🚀 Publish to GitHub Release
+    needs: [flatpak, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+
       - name: Generate release notes
-        id: notes
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           python3 -c "
@@ -71,16 +148,10 @@ jobs:
           fi
           cat /tmp/release-notes.md
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: szyszka-${{ steps.version.outputs.VERSION }}-flatpak
-          path: szyszka-*.flatpak
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: szyszka-*.flatpak
+          files: artifacts/**/*
           body_path: /tmp/release-notes.md
           draft: false
           prerelease: false
