@@ -195,7 +195,7 @@ data/
 - `.cargo/config.toml`（inline source）告诉 cargo 使用 vendored 依赖
 - `cargo --offline build --release` 离线编译
 
-> 注意：在 CI/CD 环境中，`type: dir` 可能无法使用，需要改用 `type: archive` 或 `type: git` 指向 GitHub 仓库/Release tarball。
+> 说明：`type: dir` 在 CI 中同样可用——`flatpak-release.yml` 在容器内 checkout 仓库后，清单里的 `path: ..` 正好指向仓库根目录，因此无需改成 `type: archive` 或 `type: git`。
 
 ## 四、构建配置的关键细节
 
@@ -386,26 +386,28 @@ git push origin v4.1.0
 
 ### 8.2 CI 构建流程
 
-CI 环境中使用 `type: archive` 从 GitHub Release tarball 构建（而非 `type: dir`），因此：
+CI 直接使用仓库内的 manifest（`flatpak/com.github.samfic.szyszka.yml`，其中 `type: dir`、`path: ..` 指向仓库根目录），无需 `type: archive` 或 tarball，因此：
 
-1. 必须先 push tag，CI 才能下载 tarball
-2. CI 会自动运行 `cargo vendor` 生成 vendored 依赖
-3. 构建完成后自动上传 `.flatpak` bundle 到 GitHub Release
+1. 推送 `v*` 标签后，CI 自动 checkout 仓库（清单的 `path: ..` 即指向仓库根）
+2. CI 自动运行 `cargo vendor` 生成 vendored 依赖
+3. `flatpak-builder` 用 `type: dir` 源码构建，完成后自动上传 `.flatpak` bundle 到 GitHub Release
 
-### 8.3 本地调试 CI 构建
+### 8.3 本地模拟 CI 构建
 
-如需本地模拟 CI 构建流程：
+CI 使用的是 `type: dir` 清单（与前文本地构建完全一致），因此本地模拟 CI 构建最简单的方式就是**直接用同一份 manifest**，无需改成 archive：
 
 ```bash
-# 1. 创建 Release tarball
-git archive --format=tar.gz --prefix=szyszka-4.1.0/ -o szyszka-4.1.0.tar.gz HEAD
+# 1. 生成 vendored 依赖
+cargo vendor
 
-# 2. 修改 manifest 使用 archive 源（临时）
-# 将 type: dir 改为：
-#   type: archive
-#   url: https://github.com/Sam-Fic/szyszka/archive/refs/tags/v4.1.0.tar.gz
-#   sha256: <计算 sha256>
-
-# 3. 构建
+# 2. 构建（与 flatpak-release.yml 中的命令一致）
 flatpak-builder --repo=flatpak-repo build-dir flatpak/com.github.samfic.szyszka.yml --force-clean
+
+# 3. 导出 bundle
+flatpak build-bundle flatpak-repo szyszka-X.Y.Z.flatpak com.github.samfic.szyszka
+
+# 4. 清理
+rm -rf vendor/
 ```
+
+> 说明：CI 容器内 checkout 后清单的 `path: ..` 指向仓库根，与本地执行时目录结构相同，所以本地命令和 CI 命令一致。
