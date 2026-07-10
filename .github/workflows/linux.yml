@@ -20,10 +20,13 @@ jobs:
           fetch-depth: 0
 
       - name: Install Rust
+        env:
+          CARGO_HOME: /root/.cargo
+          RUSTUP_HOME: /root/.rustup
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.96.1
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          rustc --version
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.96.1 --no-modify-path
+          echo "/root/.cargo/bin" >> "$GITHUB_PATH"
+          /root/.cargo/bin/rustc --version
 
       - name: Vendor Cargo dependencies
         run: cargo vendor

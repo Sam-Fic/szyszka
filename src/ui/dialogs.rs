@@ -1,5 +1,4 @@
 use adw::prelude::*;
-use gtk::prelude::*;
 
 use super::state_ui::SharedGuiState;
 use crate::state::SharedState;

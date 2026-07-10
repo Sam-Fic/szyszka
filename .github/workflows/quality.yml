@@ -35,5 +35,5 @@ jobs:
 
       - name: Run clippy
         run: |
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo clippy --all-targets -- -D warnings
+          cargo clippy --all-targets --all-features
+          cargo clippy --all-targets

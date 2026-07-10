@@ -5,7 +5,6 @@ use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{mpsc, Arc};
 
 use adw::prelude::*;
-use gtk::prelude::*;
 
 use crate::connect::progress::{hide_progress_dialog, show_progress_dialog, update_progress};
 use crate::files::CHARACTER;

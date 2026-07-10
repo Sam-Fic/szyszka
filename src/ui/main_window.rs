@@ -2,8 +2,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use glib::clone;
-use gtk::prelude::*;
 
 use super::models::{FileRow, RuleRow};
 use super::state_ui::{SelectMode, SharedEditorState, SharedGuiState};
@@ -288,7 +286,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
 
     // About dialog
     {
-        let about_window = window.clone();
+        let _about_window = window.clone();
         let action = gio::ActionEntry::builder("about")
             .activate(move |_, _, _| {
                 let about = adw::AboutWindow::builder()

@@ -18,7 +18,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use gtk::prelude::*;
 
 use crate::cli_arguments::{handle_help_version, parse_cli_paths};
 use crate::config::{load_dark_theme_config_or_create, load_saved_language};
