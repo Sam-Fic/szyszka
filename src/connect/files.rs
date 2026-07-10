@@ -124,7 +124,7 @@ pub fn start_async_scan(items: &[PathBuf], state: &SharedState, store: &gio::Lis
 
     glib::timeout_add_local(std::time::Duration::from_millis(70), move || {
         let current = progress.current.load(AtomicOrdering::Relaxed);
-        log::debug!("Scanning: {}/{}", current, total);
+        log::debug!("Scanning: {current}/{total}");
 
         match rx.try_recv() {
             Ok(result) => {
@@ -219,54 +219,6 @@ pub fn move_selected_down(state: &SharedState, store: &gio::ListStore) {
                 state_mut.file_selected.swap(i, i + 1);
             }
         }
-    }
-    sync_files(store, state);
-}
-
-#[derive(Copy, Clone, PartialEq)]
-pub enum SortKey {
-    None,
-    Type,
-    Current,
-    Future,
-    Path,
-}
-
-pub fn sort_files_by(state: &SharedState, store: &gio::ListStore, key: SortKey, descending: bool) {
-    {
-        let mut state_mut = state.borrow_mut();
-        let len = state_mut.files.len();
-        state_mut.file_selected.resize(len, false);
-
-        let mut indices: Vec<usize> = (0..len).collect();
-        let files = &state_mut.files;
-        indices.sort_by(|&a, &b| {
-            let fa = &files[a];
-            let fb = &files[b];
-            let ord = match key {
-                SortKey::None => fa.path.cmp(&fb.path).then_with(|| natord::compare(&fa.name, &fb.name)),
-                SortKey::Type => (!fa.is_dir).cmp(&!fb.is_dir).then_with(|| natord::compare(&fa.name, &fb.name)),
-                SortKey::Current => natord::compare(&fa.name, &fb.name),
-                SortKey::Future => natord::compare(&fa.future_name, &fb.future_name),
-                SortKey::Path => natord::compare(&fa.path, &fb.path).then_with(|| natord::compare(&fa.name, &fb.name)),
-            };
-            if descending {
-                ord.reverse()
-            } else {
-                ord
-            }
-        });
-
-        let files = std::mem::take(&mut state_mut.files);
-        let selected = std::mem::take(&mut state_mut.file_selected);
-        let mut new_files = Vec::with_capacity(len);
-        let mut new_selected = Vec::with_capacity(len);
-        for i in indices {
-            new_files.push(files[i].clone());
-            new_selected.push(selected.get(i).copied().unwrap_or(false));
-        }
-        state_mut.files = new_files;
-        state_mut.file_selected = new_selected;
     }
     sync_files(store, state);
 }

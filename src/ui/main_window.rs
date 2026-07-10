@@ -56,7 +56,7 @@ fn rule_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::
 /// Build a native "Sort by" control: a `GtkMenuButton` opening a popover with
 /// checkmarked sort criteria and an ascending/descending toggle (Nautilus style).
 /// `make_sorter` receives the criterion id and whether it is ascending.
-fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter>) -> gtk::MenuButton {
+fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter: &Rc<dyn Fn(u32, bool) -> gtk::Sorter>) -> gtk::MenuButton {
     let state = Rc::new(std::cell::RefCell::new((0u32, true))); // (criterion id, ascending)
 
     let mb = gtk::MenuButton::new();
@@ -111,7 +111,7 @@ fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter
     let desc_cb = gtk::CheckButton::with_label(&crate::fls!("sort_descending"));
     desc_cb.set_hexpand(true);
     {
-        let st = state.clone();
+        let st = state;
         let sm = sort_model.clone();
         let mb_icon = mb.clone();
         let mk = make_sorter.clone();
@@ -133,6 +133,7 @@ fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter
     mb
 }
 
+#[expect(dead_code)]
 pub struct GtkApp {
     pub window: adw::ApplicationWindow,
     pub file_store: gio::ListStore,
@@ -159,7 +160,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
 
     // Custom CSS for the list cards and future-name highlighting
     let css_provider = gtk::CssProvider::new();
-    css_provider.load_from_data(
+    css_provider.load_from_string(
         ".future-name-changed { color: @success_color; }
          .list-card-header {
              padding: 9px;
@@ -233,7 +234,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     // Register app actions
     {
         let w = window.clone();
-        let sm = app.style_manager().clone();
+        let sm = app.style_manager();
         let action = gio::ActionEntry::builder("open-preferences")
             .activate(move |_, _, _| show_preferences_dialog(&w, &sm))
             .build();
@@ -286,7 +287,6 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
 
     // About dialog
     {
-        let _about_window = window.clone();
         let action = gio::ActionEntry::builder("about")
             .activate(move |_, _, _| {
                 let about = adw::AboutWindow::builder()
@@ -382,7 +382,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
             }
             // text/uri-list: fallback used by some (non-GTK) drag sources
             else if let Ok(uris) = value.get::<String>() {
-                for uri in uris.split(|c| c == '\r' || c == '\n').filter(|s| !s.is_empty()) {
+                for uri in uris.split(['\r', '\n']).filter(|s| !s.is_empty()) {
                     let file = gio::File::for_uri(uri);
                     if let Some(p) = file.path() {
                         if p.is_dir() {
@@ -444,7 +444,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
             &crate::fls!("sort_path"),
             &crate::fls!("sort_type"),
         ],
-        file_make_sorter,
+        &file_make_sorter,
     );
 
     // Files card header
@@ -516,7 +516,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         })
         .upcast()
     });
-    let rule_sort_btn = build_sort_menu(&rule_sort_model, &[&crate::fls!("sort_type"), &crate::fls!("sort_usage")], rule_make_sorter);
+    let rule_sort_btn = build_sort_menu(&rule_sort_model, &[&crate::fls!("sort_type"), &crate::fls!("sort_usage")], &rule_make_sorter);
 
     // Rules card header
     let rule_status = gtk::Label::new(Some(&crate::fls!("bottom_rule_label_rules")));
@@ -550,7 +550,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
 
     // Add CSS provider to display when realized
     {
-        let cp = css_provider.clone();
+        let cp = css_provider;
         window.connect_realize(move |w| {
             let display = gtk::prelude::WidgetExt::display(w);
             gtk::style_context_add_provider_for_display(&display, &cp, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -578,12 +578,12 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         let file_store_c = file_store.clone();
         let rule_store_c = rule_store.clone();
         let gs = gui_state.clone();
-        let tr = translations.clone();
+        let tr = translations;
         let start_btn_c = start_btn.clone();
         let update_btn_c = update_btn.clone();
-        let pb = progress_banner.clone();
-        let file_stack_c = file_stack.clone();
-        let rule_stack_c = rule_stack.clone();
+        let pb = progress_banner;
+        let file_stack_c = file_stack;
+        let rule_stack_c = rule_stack;
         let w = window.clone();
         let progress_dialog_cell = std::rc::Rc::new(std::cell::RefCell::new(None::<adw::Dialog>));
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
@@ -776,13 +776,13 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     }
     {
         let window = window.clone();
-        let es = editor_state.clone();
+        let es = editor_state;
         let state = state.clone();
         let rule_store = rule_store.clone();
         let gs = gui_state.clone();
         let file_store_c = file_store.clone();
         edit_rule_btn.connect_clicked(move |_| {
-            let idx = state.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(-1);
+            let idx = state.borrow().rule_selected.iter().position(|x| *x).map_or(-1, |i| i as i32);
             super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &file_store_c, &gs, Some(idx));
         });
     }
@@ -838,11 +838,11 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         });
     }
     {
-        let state = state.clone();
-        let rule_store = rule_store.clone();
-        let gs = gui_state.clone();
-        let window = window.clone();
-        let file_store_c = file_store.clone();
+        let state = state;
+        let rule_store = rule_store;
+        let gs = gui_state;
+        let window = window;
+        let file_store_c = file_store;
         load_rules_btn.connect_clicked(move |_| {
             let all = crate::config::load_rules();
             if all.is_empty() {
@@ -982,7 +982,7 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
     dialog.present(Some(window));
 }
 
-fn show_select_popup(window: &adw::ApplicationWindow, file_store: &gio::ListStore, state: &SharedState, _gui_state: &SharedGuiState) {
+fn show_select_popup(window: &adw::ApplicationWindow, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
     let dialog = adw::AlertDialog::builder()
         .heading(&crate::fls!("dialog_select"))
         .body(&crate::fls!("dialog_select_body"))
@@ -996,7 +996,7 @@ fn show_select_popup(window: &adw::ApplicationWindow, file_store: &gio::ListStor
     let store = file_store.clone();
     let st = state.clone();
     let w = window.clone();
-    let gs = _gui_state.clone();
+    let gs = gui_state.clone();
     dialog.connect_response(None, move |_, response| match response {
         "all" => crate::connect::select::apply_select(&store, &st, SelectMode::SelectAll),
         "none" => crate::connect::select::apply_select(&store, &st, SelectMode::UnselectAll),
@@ -1054,9 +1054,9 @@ pub fn show_select_custom_dialog(window: &adw::ApplicationWindow, file_store: &g
     });
     let store = file_store.clone();
     let st = state.clone();
-    let pe = pattern_entry.clone();
-    let idc = include_dirs_check.clone();
-    let mc = mode_combo.clone();
+    let pe = pattern_entry;
+    let idc = include_dirs_check;
+    let mc = mode_combo;
     dialog.connect_response(Some("unselect"), move |_, _| {
         crate::connect::select::apply_select_custom(&store, &st, &pe.text(), idc.is_active(), mc.selected() as i32, false);
     });
@@ -1318,7 +1318,7 @@ fn build_rule_list_view(
         gesture.set_button(1);
         gesture.connect_released(move |_, n_press, _, _| {
             if n_press >= 2 {
-                let idx = st.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(0);
+                let idx = st.borrow().rule_selected.iter().position(|x| *x).map_or(0, |i| i as i32);
                 super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &fs, &gs, Some(idx));
             }
         });

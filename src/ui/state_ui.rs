@@ -20,13 +20,12 @@ pub enum SelectMode {
     SelectAll,
     UnselectAll,
     Reverse,
-    SelectCustom,
-    UnselectCustom,
     SelectChanged,
     UnselectChanged,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[expect(dead_code)]
 pub enum SortColumn {
     None,
     TypeC,
@@ -95,6 +94,7 @@ impl Default for EditorState {
     }
 }
 
+#[expect(dead_code)]
 pub struct GuiState {
     pub rule_editor_open: bool,
     pub settings_open: bool,

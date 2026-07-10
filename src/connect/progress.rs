@@ -1,7 +1,7 @@
 use crate::ui::state_ui::SharedGuiState;
 
 pub fn show_overlay(gui_state: &SharedGuiState, title: &str, message: &str, indeterminate: bool) {
-    log::info!("Progress: {} - {} (indeterminate={})", title, message, indeterminate);
+    log::info!("Progress: {title} - {message} (indeterminate={indeterminate})");
     let mut gs = gui_state.borrow_mut();
     gs.message_dialog_title = title.to_string();
     gs.message_dialog_text = message.to_string();
@@ -14,7 +14,7 @@ pub fn hide_overlay(gui_state: &SharedGuiState) {
 }
 
 pub fn show_progress_dialog(gui_state: &SharedGuiState, title: &str, message: &str, total: usize) {
-    log::info!("Progress dialog: {} - {} (total={})", title, message, total);
+    log::info!("Progress dialog: {title} - {message} (total={total})");
     let mut gs = gui_state.borrow_mut();
     gs.progress_active = true;
     gs.progress_title = title.to_string();

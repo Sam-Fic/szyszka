@@ -1,3 +1,4 @@
+#[expect(dead_code)]
 pub struct Translations {
     pub upper_start_renaming_button: String,
     pub upper_add_files_button: String,

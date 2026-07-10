@@ -63,12 +63,12 @@ fn main() -> glib::ExitCode {
         app.style_manager().set_color_scheme(libadwaita::ColorScheme::ForceLight);
     }
 
-    let state_clone = state.clone();
-    let editor_state_clone = editor_state.clone();
-    let gui_state_clone = gui_state.clone();
-    let translations_clone = translations.clone();
-    let cli_paths_clone = cli_paths.clone();
-    let current_window_clone = current_window.clone();
+    let state_clone = state;
+    let editor_state_clone = editor_state;
+    let gui_state_clone = gui_state;
+    let translations_clone = translations;
+    let cli_paths_clone = cli_paths;
+    let current_window_clone = current_window;
 
     app.connect_activate(move |app| {
         // Destroy old window if exists

@@ -2,7 +2,7 @@ use glib::prelude::*;
 use glib::subclass::prelude::*;
 
 mod imp {
-    use super::*;
+    use super::{DerivedObjectProperties, ObjectExt, ObjectImpl, ObjectSubclass};
     use glib::Properties;
     use std::cell::RefCell;
 
@@ -38,7 +38,7 @@ mod imp {
             Self::derived_properties()
         }
         fn set_property(&self, id: usize, value: &glib::Value, pspec: &glib::ParamSpec) {
-            self.derived_set_property(id, value, pspec)
+            self.derived_set_property(id, value, pspec);
         }
         fn property(&self, id: usize, pspec: &glib::ParamSpec) -> glib::Value {
             self.derived_property(id, pspec)
@@ -73,7 +73,7 @@ impl FileRow {
 }
 
 mod imp_rule {
-    use super::*;
+    use super::{DerivedObjectProperties, ObjectExt, ObjectImpl, ObjectSubclass};
     use glib::Properties;
     use std::cell::RefCell;
 
@@ -103,7 +103,7 @@ mod imp_rule {
             Self::derived_properties()
         }
         fn set_property(&self, id: usize, value: &glib::Value, pspec: &glib::ParamSpec) {
-            self.derived_set_property(id, value, pspec)
+            self.derived_set_property(id, value, pspec);
         }
         fn property(&self, id: usize, pspec: &glib::ParamSpec) -> glib::Value {
             self.derived_property(id, pspec)

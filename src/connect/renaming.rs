@@ -13,8 +13,6 @@ use crate::state::SharedState;
 use crate::ui::dialogs;
 use crate::ui::state_ui::SharedGuiState;
 
-const ERROR_PAGE_SIZE: usize = 500;
-
 struct RenameResult {
     properly_renamed: u32,
     ignored: u32,
@@ -75,7 +73,7 @@ pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState, gu
     }
 
     let total = file_renames.len() + folder_renames.values().map(|v| v.len()).sum::<usize>();
-    log::info!("Renaming {} items", total);
+    log::info!("Renaming {total} items");
 
     show_progress_dialog(gui_state, &fls!("dialog_confirm_renaming"), &fls!("dialog_loading"), total);
 
@@ -115,7 +113,7 @@ pub fn perform_renaming(window: &adw::ApplicationWindow, state: &SharedState, gu
 
     glib::timeout_add_local(std::time::Duration::from_millis(60), move || {
         let cur = counter_p.load(AtomicOrdering::Relaxed);
-        log::debug!("Rename progress: {}/{}", cur, total);
+        log::debug!("Rename progress: {cur}/{total}");
 
         update_progress(&gs_clone, cur);
 
@@ -166,11 +164,11 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
     content_box.set_margin_start(8);
     content_box.set_margin_end(8);
 
-    content_box.append(&gtk::Label::builder().label(&format!("Properly renamed: {}", result.properly_renamed)).xalign(0.0).build());
-    content_box.append(&gtk::Label::builder().label(&format!("Ignored: {}", result.ignored)).xalign(0.0).build());
+    content_box.append(&gtk::Label::builder().label(format!("Properly renamed: {}", result.properly_renamed)).xalign(0.0).build());
+    content_box.append(&gtk::Label::builder().label(format!("Ignored: {}", result.ignored)).xalign(0.0).build());
 
     if failed_total > 0 {
-        let err_label = gtk::Label::builder().label(&format!("Errors: {}", failed_total)).xalign(0.0).build();
+        let err_label = gtk::Label::builder().label(format!("Errors: {failed_total}")).xalign(0.0).build();
         err_label.add_css_class("error");
         content_box.append(&err_label);
 
@@ -201,11 +199,11 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
 
             let prev_btn = gtk::Button::from_icon_name("go-previous-symbolic");
             prev_btn.set_sensitive(false);
-            let page_label = gtk::Label::new(Some(&format!("1 / {}", total_pages)));
+            let page_label = gtk::Label::new(Some(&format!("1 / {total_pages}")));
             let next_btn = gtk::Button::from_icon_name("go-next-symbolic");
 
             let st = state.clone();
-            let lbl = error_text_label.clone();
+            let lbl = error_text_label;
             let plbl = page_label.clone();
             let cp = current_page.clone();
             let prev = prev_btn.clone();
@@ -234,8 +232,8 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
                 });
             }
             {
-                let cp2 = current_page.clone();
-                let update = update_page.clone();
+                let cp2 = current_page;
+                let update = update_page;
                 next_btn.connect_clicked(move |_| {
                     let cur = cp2.get();
                     if cur < tp - 1 {
@@ -271,10 +269,6 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
     dialog.set_extra_child(Some(&content_box));
     dialog.add_response("ok", &crate::fls!("dialog_button_ok"));
     dialog.present(Some(window));
-}
-
-pub fn set_failed_page(_state: &SharedState, _page: i32) {
-    // Handled via dialog now
 }
 
 pub fn copy_all_errors(state: &SharedState) {

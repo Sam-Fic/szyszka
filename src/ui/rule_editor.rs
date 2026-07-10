@@ -170,7 +170,7 @@ pub fn show_rule_editor(
             let saved_list_box = saved_list_box.clone();
             let es = editor_state.clone();
             let entry = entry.clone();
-            let lbl = after_label_ref.clone();
+            let lbl = after_label_ref;
             move || {
                 while let Some(child) = saved_list_box.first_child() {
                     saved_list_box.remove(&child);
@@ -222,8 +222,8 @@ pub fn show_rule_editor(
         let save_btn = icon_button(&crate::fls!("rule_editor_custom_save"), "document-save-symbolic");
         save_btn.set_halign(gtk::Align::Start);
         {
-            let entry = entry.clone();
-            let refresh = refresh_saved_list.clone();
+            let entry = entry;
+            let refresh = refresh_saved_list;
             save_btn.connect_clicked(move |_| {
                 crate::connect::rules_ops::save_custom_text(&entry.text());
                 refresh();
@@ -243,7 +243,7 @@ pub fn show_rule_editor(
         group.add(&combo_row(
             &crate::fls!("rule_editor_tool_type"),
             &[&crate::fls!("ctrl_lowercase"), &crate::fls!("ctrl_uppercase")],
-            if es.case_lowercase { 0 } else { 1 },
+            usize::from(!es.case_lowercase),
             editor_state,
             &after_label,
             |es, v| es.case_lowercase = v == 0,
@@ -319,13 +319,13 @@ pub fn show_rule_editor(
         ));
         let settings_group = adw::PreferencesGroup::builder().title(&crate::fls!("label_add_number_settings")).build();
         settings_group.add(&entry_row(&crate::fls!("ctrl_start_number"), &es.add_number_start, editor_state, &after_label, |es, v| {
-            es.add_number_start = v
+            es.add_number_start = v;
         }));
         settings_group.add(&entry_row(&crate::fls!("ctrl_step"), &es.add_number_step, editor_state, &after_label, |es, v| {
-            es.add_number_step = v
+            es.add_number_step = v;
         }));
         settings_group.add(&entry_row(&crate::fls!("ctrl_fill_zeros"), &es.add_number_zeros, editor_state, &after_label, |es, v| {
-            es.add_number_zeros = v
+            es.add_number_zeros = v;
         }));
         drop(es);
         page.add(&group);
@@ -351,7 +351,7 @@ pub fn show_rule_editor(
             |es, v| es.add_text_place = if v == 0 { RulePlace::BeforeName } else { RulePlace::AfterName },
         ));
         group.add(&entry_row(&crate::fls!("label_add_text"), &es.add_text_text, editor_state, &after_label, |es, v| {
-            es.add_text_text = v
+            es.add_text_text = v;
         }));
         drop(es);
         page.add(&group);
@@ -385,13 +385,13 @@ pub fn show_rule_editor(
         group.add(&combo_row(
             &crate::fls!("label_usage_type"),
             &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")],
-            if es.replace_case_sensitive { 0 } else { 1 },
+            usize::from(!es.replace_case_sensitive),
             editor_state,
             &after_label,
             |es, v| es.replace_case_sensitive = v == 0,
         ));
         group.add(&switch_row(&crate::fls!("ctrl_use_regex"), es.replace_use_regex, editor_state, &after_label, |es, v| {
-            es.replace_use_regex = v
+            es.replace_use_regex = v;
         }));
         group.add(&switch_row(
             &crate::fls!("ctrl_replace_all"),
@@ -453,13 +453,13 @@ pub fn show_rule_editor(
         group.add(&combo_row(
             &crate::fls!("label_usage_type"),
             &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")],
-            if es.trim_case_sensitive { 0 } else { 1 },
+            usize::from(!es.trim_case_sensitive),
             editor_state,
             &after_label,
             |es, v| es.trim_case_sensitive = v == 0,
         ));
         group.add(&entry_row(&crate::fls!("ctrl_trim_text"), &es.trim_text, editor_state, &after_label, |es, v| {
-            es.trim_text = v
+            es.trim_text = v;
         }));
         drop(es);
         page.add(&group);
@@ -487,7 +487,7 @@ pub fn show_rule_editor(
         options_group.add(&combo_row(
             &crate::fls!("rule_editor_usage_type"),
             &[&crate::fls!("ctrl_everything"), &crate::fls!("ctrl_partial")],
-            if editor_state.borrow().normalize_full { 0 } else { 1 },
+            usize::from(!editor_state.borrow().normalize_full),
             editor_state,
             &after_label,
             |es, v| es.normalize_full = v == 0,
@@ -568,7 +568,7 @@ pub fn show_rule_editor(
     // Wire before_entry -> example
     {
         let es = editor_state.clone();
-        let lbl = after_label.clone();
+        let lbl = after_label;
         before_entry.connect_changed(move |e| {
             es.borrow_mut().example_before_text = e.text().to_string();
             crate::connect::rules_ops::update_example(&es, &SharedState::default());
