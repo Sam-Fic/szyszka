@@ -20,7 +20,20 @@
     </screenshot>
   </screenshots>
   <releases>
-    <release version="4.0.0" date="2026-07-10"/>
+    <release version="4.0.0" date="2026-07-10">
+      <description>
+        <p>First release of this fork, rebuilt on GTK 4 and libadwaita:</p>
+        <ul>
+          <li>Rewritten UI with GTK 4 and libadwaita, following the GNOME Human Interface Guidelines</li>
+          <li>Modernized main window with adaptive layout, native file/rule list views and sorting</li>
+          <li>Added drag-and-drop support for adding files</li>
+          <li>Added a progress dialog for renaming operations</li>
+          <li>Bundled the app icon as a GResource and added an About dialog</li>
+          <li>Added desktop entry and AppStream metadata for proper desktop integration</li>
+          <li>Completed missing Chinese translations</li>
+        </ul>
+      </description>
+    </release>
   </releases>
   <content_rating type="oars-1.0"/>
   <developer_name>Rafał Mikrut, Sam-Fic</developer_name>
