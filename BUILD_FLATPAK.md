@@ -1,7 +1,11 @@
 # Szyszka Flatpak 构建指南
 
-> 本文档供 AI 编程助手在协助构建和发布 Flatpak 版本时参考。
-> **AI 应自动化完成全部流程**：版本号更新、commit、tag、push、flatpak 构建、bundle 导出、GitHub Release 创建，无需用户手动执行任何步骤。
+> 本文档供 AI 编程助手在协助构建和发布版本时参考。
+>
+> **发布模型（重要）**：本项目的实际发布由 `.github/workflows/release.yml` 全自动完成——推送 `v*` tag 后，CI 并行构建三平台产物（Flatpak / Windows / macOS），并自动创建 GitHub Release 上传全部安装包。
+> 因此 **AI 在本地只负责「版本元数据」与「提交 + 打 tag + 推送」**，不要本地执行 flatpak 构建，也不要手动 `gh release create`（会重复创建或与 CI 冲突）。构建与发布一律交给 CI。
+>
+> **AI 应自动完成**：确定 changelog → 更新 `Cargo.toml` / `Cargo.lock` / `metainfo.xml` → commit → tag → push。无需用户手动执行任何步骤。
 
 ## 一、前置条件
 
@@ -17,13 +21,13 @@ cargo --version
 
 ```bash
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --user flathub org.gnome.Platform//50 org.gnome.Sdk//50
-flatpak install --user flathub org.freedesktop.Sdk.Extension.rust-stable//25.08
+flatpak install --user flathub org.gnome.Platform//47 org.gnome.Sdk//47
+flatpak install --user flathub org.freedesktop.Sdk.Extension.rust-stable//24.08
 ```
 
 ## 二、版本发布完整流程
 
-> **AI 执行说明**：以下所有步骤应由 AI 自动完成，无需用户手动操作。AI 应按顺序执行：查看 git 历史 → 更新版本号 → 更新 metainfo → vendor → commit → tag → push → flatpak 构建 → bundle 导出 → 安装验证 → GitHub Release 创建。
+> **AI 执行说明**：以下所有步骤应由 AI 自动完成，无需用户手动操作。AI 应按顺序执行：查看 git 历史 → 更新版本号 → 更新 metainfo → commit → tag → push。推送 `v*` tag 后，三平台构建与 GitHub Release 创建由 `release.yml` CI 自动完成，AI **不**应在本地执行 flatpak 构建或手动 `gh release create`。
 
 ### 2.1 版本发布提交规范
 
@@ -84,6 +88,8 @@ git log v4.0.0..HEAD --stat --name-only
 
 ### 2.4 提交、打标签与推送
 
+> **推送即发布**：推 `v*` tag 后，`release.yml` 会自动构建三平台产物并创建 GitHub Release。所以这一步之后 AI 无需再做构建或发布操作，只需等待 CI 完成并验证结果。
+
 AI 应直接执行以下命令，无需询问用户：
 
 ```bash
@@ -96,7 +102,9 @@ git tag vX.Y.Z
 git push && git push origin vX.Y.Z
 ```
 
-### 2.5 构建 Flatpak 包
+### 2.5 本地构建 Flatpak（仅用于验证，不参与发布）
+
+> ⚠️ **本地产物不进入发布流程**：实际发布由 `release.yml` CI 自动完成。以下本地步骤仅供开发期快速验证（确认能打包/能运行），**不要**把本地导出的 `.flatpak` 手动传到 GitHub Release——那会与 CI 自动创建的 Release 重复或冲突。
 
 #### 方式 A：仅本地安装（快速验证）
 
@@ -115,7 +123,7 @@ rm -rf vendor/
 - `--force-clean` 会删除旧的构建目录，避免缓存冲突
 - `--user --install` 构建完成后自动安装到当前用户环境
 
-#### 方式 B：构建可分发的 .flatpak 文件（用于发布）
+#### 方式 B：导出 .flatpak 文件（本地验证用，非发布路径）
 
 > ⚠️ **重要说明**：`flatpak-builder --repo=flatpak-repo build-dir ...` 会创建两个独立的目录：
 >
@@ -201,9 +209,9 @@ data/
 
 ### 4.1 运行时版本
 
-当前使用 `org.gnome.Platform` **runtime-version: 50**（对应 GNOME 50）。
+当前使用 `org.gnome.Platform` **runtime-version: 47**（对应 GNOME 47）。
 
-如果需要升级运行时版本（例如 GNOME 51 发布后），需要同时更新：
+如果需要升级运行时版本（例如 GNOME 48 发布后），需要同时更新：
 
 - `flatpak/com.github.samfic.szyszka.yml` 中的 `runtime-version`
 - CI/CD 中安装的运行时版本
@@ -248,7 +256,7 @@ error: /usr/lib/sdk/rust-stable/bin/cargo: No such file or directory
 **解决**：
 
 ```bash
-flatpak install --user flathub org.freedesktop.Sdk.Extension.rust-stable//25.08
+flatpak install --user flathub org.freedesktop.Sdk.Extension.rust-stable//24.08
 ```
 
 ### 5.3 构建失败：GNOME SDK 版本不匹配
@@ -299,26 +307,23 @@ rm -rf build-dir/ flatpak-repo/ .flatpak-builder/ vendor/
 
 ## 六、快速参考命令
 
-> 以下所有步骤由 AI 自动执行，用户无需手动操作。
+> 以下所有步骤由 AI 自动执行，用户无需手动操作。本地只负责版本元数据与 tag 推送，构建与发布由 `release.yml` CI 自动完成。
 
 ```bash
 # ──────────────────────────────────────
-# 完整的版本发布流程（AI 全自动执行）
+# 完整发布流程（AI 在本地执行；构建+发布交给 CI）
 # ──────────────────────────────────────
-# 1. git log 查看上一版本到现在的提交，总结更新内容
+# 1. git log 查看上一版本到现在的提交，总结更新内容（写入 metainfo.xml）
 # 2. 编辑 Cargo.toml 更新版本号
 # 3. cargo check 更新 Cargo.lock
-# 4. 编辑 metainfo.xml 添加发布记录
-# 5. git add Cargo.toml Cargo.lock data/com.github.samfic.szyszka.metainfo.xml && git commit -m "release: vX.Y.Z" && git tag vX.Y.Z && git push && git push origin vX.Y.Z
-# 6. cargo vendor
-# 7. flatpak-builder --repo=flatpak-repo build-dir flatpak/com.github.samfic.szyszka.yml --force-clean
-# 8. flatpak build-bundle flatpak-repo szyszka-X.Y.Z.flatpak com.github.samfic.szyszka
-# 9. flatpak install --user --or-update -y szyszka-X.Y.Z.flatpak
-# 10. rm -rf vendor/
-# 11. gh release create vX.Y.Z --title "Szyszka vX.Y.Z" --notes "..." szyszka-X.Y.Z.flatpak
+# 4. 编辑 metainfo.xml 在 <releases> 顶部添加 release 条目（version 纯版本号，无 v 前缀）
+# 5. git add Cargo.toml Cargo.lock data/com.github.samfic.szyszka.metainfo.xml
+#    && git commit -m "release: vX.Y.Z" && git tag vX.Y.Z && git push && git push origin vX.Y.Z
+#    → 推送 v* tag 即触发 release.yml：自动三平台构建 + 创建 GitHub Release 上传全部安装包
+# 6. 等待 CI 完成，在 GitHub Releases 页面确认三个产物（.flatpak / .exe / macOS 二进制）均已上传
 
 # ──────────────────────────────────────
-# 仅本地安装验证（快速开发测试）
+# 仅本地安装验证（快速开发测试，不进入发布）
 # ──────────────────────────────────────
 cargo vendor
 flatpak-builder build-dir flatpak/com.github.samfic.szyszka.yml --user --install --force-clean
@@ -327,44 +332,36 @@ rm -rf vendor/
 
 ---
 
-## 七、发布到 GitHub Releases
+## 七、发布到 GitHub Releases（由 CI 自动完成）
 
-AI 应使用 `gh` CLI 自动完成，无需用户手动操作。
+> **不要手动创建 Release**：`.github/workflows/release.yml` 的 `release` job 会在 `v*` tag 推送后，自动下载三平台 artifact、从 `metainfo.xml` 提取对应版本 notes、创建（唯一的）GitHub Release 并上传全部安装包。手动 `gh release create` 会与 CI 重复，导致两个 Release 或上传冲突。
 
-### 7.1 前置检查
+### 7.1 推送 tag 前的自检（CI 前置条件）
 
-```bash
-# 确认 gh 已安装
-gh --version
+确保满足以下条件，否则 CI 发布会失败或 notes 为空：
 
-# 确认已登录（未登录则提示）
-gh auth status 2>&1 || {
-  echo "未登录 GitHub CLI，请先执行 gh auth login"
-  exit 1
-}
-```
+- `metainfo.xml` 的 `<releases>` 顶部已存在与本次 tag 版本**完全一致**的 `<release version="X.Y.Z">` 条目（无 `v` 前缀）；
+- `Cargo.toml` 的 `version` 与 tag 版本一致；
+- 已 `git push origin vX.Y.Z` 推送 tag（仅 push 分支不会触发 `release.yml`，它只在 `tags: ['v*']` 时运行）。
 
-### 7.2 创建 Release
+### 7.2 验证 CI 发布结果
 
-创建 Release 并上传 Flatpak bundle（注意格式按照模板写，中英文日志都有冒号）：
+推送 tag 后，AI 应检查 CI 是否成功产出 Release：
 
 ```bash
-gh release create vX.Y.Z --title "Szyszka vX.Y.Z" --notes "$(cat <<'EOF'
-### 主要改进
+# 查看 release.yml 运行状态（等待所有 job 成功）
+gh run list --workflow release.yml --limit 3
 
-- **简洁描述**：详细内容
-- **简洁描述**：详细内容
-
-### Improvements
-
-- **Brief description**: Detailed content
-- **Brief description**: Detailed content
-
-EOF
-)" szyszka-X.Y.Z.flatpak
+# CI 完成后，确认 Release 与三平台产物
+gh release view vX.Y.Z
+gh release download vX.Y.Z -D /tmp/szyszka-release && ls -lh /tmp/szyszka-release
 ```
 
-> 💡 Release notes 内容应从 `metainfo.xml` 的 `<release>` 条目中提取，保持一致。
+> 💡 若 CI 自动发布的 Release notes 为空（如 metainfo 缺该版本条目），可在补全 metainfo 后，
+> 用 `gh release edit vX.Y.Z --notes-file notes.md` 修正 notes，**不要重新 `gh release create`**。
+
+> ⚠️ 仅在 CI 异常失败、且确实需要本地补救时才手动创建/补传，此时应仅上传 CI 漏掉的产物，
+> 避免与 CI 已发布的 Release 冲突。正常流程一律依赖 CI。
 
 ---
 
