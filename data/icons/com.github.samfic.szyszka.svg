@@ -8,10 +8,10 @@
   <!-- #bc996e checker row1 | #d3b386 checker row2 | #e4c79c checker row3 -->
   <!-- #f1d9ac base (lightest) -->
   <defs>
-    <radialGradient id="stemRadial" cx="256" cy="94" r="140" gradientUnits="userSpaceOnUse">
+    <linearGradient id="stemRadial" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#5c371eff"/>
       <stop offset="1" stop-color="#7c5738ff"/>
-    </radialGradient>
+    </linearGradient>
     <clipPath id="cone">
       <path d="M 148.80 347.90 A 150.00 150.00 0 1 1 363.20 347.90 L 261.70 451.60 A 8.00 8.00 0 0 1 250.30 451.60 L 148.80 347.90 Z"/>
     </clipPath>
