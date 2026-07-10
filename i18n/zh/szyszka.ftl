@@ -71,6 +71,15 @@ select_custom_unselect_directory = 排除目录
 
 select_custom_hint = 目录/文件模式下忽略模式匹配。
 
+# Sort options (list view)
+sort_by = 排序
+sort_name = 名称
+sort_future_name = 新名称
+sort_path = 路径
+sort_type = 类型
+sort_usage = 用途
+sort_descending = 降序
+
 # General
 dialog_button_ok = 确定
 dialog_button_cancel = 取消
@@ -247,6 +256,7 @@ menu_open_custom_texts_file = 打开自定义文本文件
 menu_open_config_dir = 打开配置目录
 menu_open_log_folder = 打开日志文件夹
 menu_language = 语言…
+menu_about = 关于
 
 # Dialogs
 dialog_copy_all_errors = 复制所有错误
