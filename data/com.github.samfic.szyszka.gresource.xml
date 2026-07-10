@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/samfic/szyszka">
+    <file preprocess="xml-stripblanks" alias="icons/com.github.samfic.szyszka.svg">icons/com.github.samfic.szyszka.svg</file>
+  </gresource>
+</gresources>

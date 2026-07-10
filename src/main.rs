@@ -39,9 +39,19 @@ fn main() -> glib::ExitCode {
 
     let _ = gtk::init();
 
+    gio::resources_register_include!("com.github.samfic.szyszka.gresource")
+        .expect("Failed to register bundled resources");
+
     let app = adw::Application::builder()
         .application_id("com.github.samfic.szyszka")
         .build();
+
+    app.connect_startup(|_| {
+        if let Some(display) = gtk::gdk::Display::default() {
+            let theme = gtk::IconTheme::for_display(&display);
+            theme.add_resource_path("/com/github/samfic/szyszka");
+        }
+    });
 
     let current_window: Rc<RefCell<Option<adw::ApplicationWindow>>> = Rc::new(RefCell::new(None));
 

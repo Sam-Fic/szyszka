@@ -263,6 +263,7 @@ menu_open_custom_texts_file = Open custom texts file
 menu_open_config_dir = Open config dir
 menu_open_log_folder = Open log folder
 menu_language = Language…
+menu_about = About
 
 # Dialogs
 dialog_copy_all_errors = Copy all errors

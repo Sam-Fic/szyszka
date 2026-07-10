@@ -230,6 +230,11 @@ pub fn build_gtk_app(
     open_section.append(Some(&crate::fls!("menu_open_log_folder")), Some("app.open-log-folder"));
     menu_model.append_section(None, &open_section);
 
+    // About
+    let about_section = gio::Menu::new();
+    about_section.append(Some(&crate::fls!("menu_about")), Some("app.about"));
+    menu_model.append_section(None, &about_section);
+
     let menu_popover = gtk::PopoverMenu::from_model(Some(&menu_model));
     let menu_btn = gtk::MenuButton::new();
     menu_btn.set_icon_name("open-menu-symbolic");
@@ -284,6 +289,28 @@ pub fn build_gtk_app(
                     let _ = open::that(p);
                 }
             }).build();
+        app.add_action_entries([action]);
+    }
+
+    // About dialog
+    {
+        let about_window = window.clone();
+        let action = gio::ActionEntry::builder("about")
+            .activate(move |_, _, _| {
+                let about = adw::AboutWindow::builder()
+                    .application_name("Szyszka")
+                    .application_icon("com.github.samfic.szyszka")
+                    .version(env!("CARGO_PKG_VERSION"))
+                    .copyright("Copyright © 2021 Rafał Mikrut\nCopyright © 2026 Sam-Fic")
+                    .comments("Fork of Szyszka by Rafał Mikrut (https://github.com/qarmin/szyszka). Rewritten with GTK 4 and libadwaita (GNOME HIG).")
+                    .website("https://github.com/Sam-Fic/szyszka")
+                    .issue_url("https://github.com/Sam-Fic/szyszka/issues")
+                    .license_type(gtk::License::MitX11)
+                    .build();
+                about.set_developers(&["Rafał Mikrut", "Sam-Fic"]);
+                about.present();
+            })
+            .build();
         app.add_action_entries([action]);
     }
 
