@@ -321,11 +321,7 @@ fn read_rule_from_editor_inner(es: &EditorState) -> SingleRule {
             rule_data.regex_replace_all = es.replace_all_occurrences;
             rule_data.text_to_find = es.replace_text_to_find.clone();
             rule_data.text_to_replace = es.replace_text_to_replace.clone();
-            let place = if rule_data.use_regex {
-                RulePlace::None
-            } else {
-                es.replace_place
-            };
+            let place = if rule_data.use_regex { RulePlace::None } else { es.replace_place };
             let additional_regex_text = if rule_data.use_regex { " regex" } else { "" };
             let desc = fls!(
                 "rule_description_replace",

@@ -14,10 +14,7 @@ pub fn pick_files_and_add(state: &SharedState, store: &gio::ListStore, gui_state
     let store = store.clone();
     let gui_state = gui_state.clone();
     glib::spawn_future_local(async move {
-        let files = rfd::AsyncFileDialog::new()
-            .set_title("Add files")
-            .pick_files()
-            .await;
+        let files = rfd::AsyncFileDialog::new().set_title("Add files").pick_files().await;
         let Some(files) = files else { return };
         let paths: Vec<PathBuf> = files.into_iter().map(|f| f.path().into()).collect();
         let sorted = sort_files(paths);
@@ -53,12 +50,11 @@ pub fn pick_folders_into_state(state: &SharedState, store: &gio::ListStore, gui_
     let gui_state = gui_state.clone();
     let window = window.clone();
     glib::spawn_future_local(async move {
-        let folders = rfd::AsyncFileDialog::new()
-            .set_title("Add folders")
-            .pick_folders()
-            .await;
+        let folders = rfd::AsyncFileDialog::new().set_title("Add folders").pick_folders().await;
         let Some(folders) = folders else { return };
-        if folders.is_empty() { return; }
+        if folders.is_empty() {
+            return;
+        }
 
         let paths: Vec<PathBuf> = folders.into_iter().map(|f| f.path().into()).collect();
         let display: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
@@ -87,18 +83,16 @@ pub fn confirm_add_folders(state: &SharedState, store: &gio::ListStore, gui_stat
     let store_clone = store.clone();
     let gui_state_clone = gui_state.clone();
 
-    glib::timeout_add_local(std::time::Duration::from_millis(80), move || {
-        match rx.try_recv() {
-            Ok(items) => {
-                start_async_scan(&items, &state_clone, &store_clone, &gui_state_clone, "Reading file metadata…");
-                glib::ControlFlow::Break
-            }
-            Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
-            Err(mpsc::TryRecvError::Disconnected) => {
-                hide_overlay(&gui_state_clone);
-                state_clone.borrow_mut().async_active = false;
-                glib::ControlFlow::Break
-            }
+    glib::timeout_add_local(std::time::Duration::from_millis(80), move || match rx.try_recv() {
+        Ok(items) => {
+            start_async_scan(&items, &state_clone, &store_clone, &gui_state_clone, "Reading file metadata…");
+            glib::ControlFlow::Break
+        }
+        Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
+        Err(mpsc::TryRecvError::Disconnected) => {
+            hide_overlay(&gui_state_clone);
+            state_clone.borrow_mut().async_active = false;
+            glib::ControlFlow::Break
         }
     });
     state.borrow_mut().async_active = true;
@@ -256,7 +250,11 @@ pub fn sort_files_by(state: &SharedState, store: &gio::ListStore, key: SortKey, 
                 SortKey::Future => natord::compare(&fa.future_name, &fb.future_name),
                 SortKey::Path => natord::compare(&fa.path, &fb.path).then_with(|| natord::compare(&fa.name, &fb.name)),
             };
-            if descending { ord.reverse() } else { ord }
+            if descending {
+                ord.reverse()
+            } else {
+                ord
+            }
         });
 
         let files = std::mem::take(&mut state_mut.files);

@@ -9,33 +9,46 @@ use crate::ui::state_ui::SharedGuiState;
 
 pub fn sync_files(store: &gio::ListStore, state: &SharedState) {
     let state_ref = state.borrow();
-    let items: Vec<glib::Object> = state_ref.files.iter().enumerate().map(|(idx, item)| {
-        let selected = state_ref.file_selected.get(idx).copied().unwrap_or(false);
-        FileRow::new(
-            selected,
-            item.is_dir,
-            &item.name,
-            &item.future_name,
-            &item.path,
-            &format_size(item.size, BINARY),
-            &item.date,
-        ).upcast::<glib::Object>()
-    }).collect();
+    let items: Vec<glib::Object> = state_ref
+        .files
+        .iter()
+        .enumerate()
+        .map(|(idx, item)| {
+            let selected = state_ref.file_selected.get(idx).copied().unwrap_or(false);
+            FileRow::new(
+                selected,
+                item.is_dir,
+                &item.name,
+                &item.future_name,
+                &item.path,
+                &format_size(item.size, BINARY),
+                &item.date,
+            )
+            .upcast::<glib::Object>()
+        })
+        .collect();
     store.splice(0, store.n_items(), &items);
 }
 
 pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
     let state_ref = state.borrow();
-    let items: Vec<glib::Object> = state_ref.rules.rules.iter().enumerate().map(|(idx, rule)| {
-        let selected = state_ref.rule_selected.get(idx).copied().unwrap_or(false);
-        RuleRow::new(
-            selected,
-            &crate::rule::rules::rule_type_to_string(rule.rule_type),
-            &crate::rule::rules::rule_place_to_string(rule.rule_place),
-            &rule.rule_description,
-            crate::rule::rules::rule_type_icon(rule.rule_type),
-        ).upcast::<glib::Object>()
-    }).collect();
+    let items: Vec<glib::Object> = state_ref
+        .rules
+        .rules
+        .iter()
+        .enumerate()
+        .map(|(idx, rule)| {
+            let selected = state_ref.rule_selected.get(idx).copied().unwrap_or(false);
+            RuleRow::new(
+                selected,
+                &crate::rule::rules::rule_type_to_string(rule.rule_type),
+                &crate::rule::rules::rule_place_to_string(rule.rule_place),
+                &rule.rule_description,
+                crate::rule::rules::rule_type_icon(rule.rule_type),
+            )
+            .upcast::<glib::Object>()
+        })
+        .collect();
     store.splice(0, store.n_items(), &items);
 }
 
@@ -43,8 +56,8 @@ pub fn sync_rules(store: &gio::ListStore, state: &SharedState) {
 /// With SortListModel, GTK selection indices are in sorted order,
 /// so we must map them back to the original ListStore order.
 pub fn sync_selection_from_gtk(selection: &gtk::MultiSelection, state: &SharedState) {
-    use gtk::prelude::SelectionModelExt;
     use gtk::prelude::ListModelExt;
+    use gtk::prelude::SelectionModelExt;
     let mut s = state.borrow_mut();
     let n = s.files.len();
     let mut selected = vec![false; n];

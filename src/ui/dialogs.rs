@@ -1,14 +1,11 @@
-use gtk::prelude::*;
 use adw::prelude::*;
+use gtk::prelude::*;
 
-use crate::state::SharedState;
 use super::state_ui::SharedGuiState;
+use crate::state::SharedState;
 
 pub fn show_message_dialog(window: &adw::ApplicationWindow, title: &str, message: &str) {
-    let dialog = adw::AlertDialog::builder()
-        .heading(title)
-        .body(message)
-        .build();
+    let dialog = adw::AlertDialog::builder().heading(title).body(message).build();
     dialog.add_response("ok", &crate::fls!("dialog_button_ok"));
     dialog.present(Some(window));
 }
@@ -38,10 +35,7 @@ pub fn show_results_dialog(window: &adw::ApplicationWindow, _gui_state: SharedGu
         ignored_count
     );
 
-    let dialog = adw::AlertDialog::builder()
-        .heading(&crate::fls!("dialog_results_of_renaming"))
-        .body(&body)
-        .build();
+    let dialog = adw::AlertDialog::builder().heading(&crate::fls!("dialog_results_of_renaming")).body(&body).build();
     dialog.add_response("ok", &crate::fls!("dialog_button_ok"));
     dialog.present(Some(window));
 }

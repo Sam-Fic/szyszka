@@ -17,8 +17,8 @@ mod ui;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gtk::prelude::*;
 use adw::prelude::*;
+use gtk::prelude::*;
 
 use crate::cli_arguments::{handle_help_version, parse_cli_paths};
 use crate::config::{load_dark_theme_config_or_create, load_saved_language};
@@ -39,12 +39,9 @@ fn main() -> glib::ExitCode {
 
     let _ = gtk::init();
 
-    gio::resources_register_include!("com.github.samfic.szyszka.gresource")
-        .expect("Failed to register bundled resources");
+    gio::resources_register_include!("com.github.samfic.szyszka.gresource").expect("Failed to register bundled resources");
 
-    let app = adw::Application::builder()
-        .application_id("com.github.samfic.szyszka")
-        .build();
+    let app = adw::Application::builder().application_id("com.github.samfic.szyszka").build();
 
     app.connect_startup(|_| {
         if let Some(display) = gtk::gdk::Display::default() {
@@ -84,13 +81,7 @@ fn main() -> glib::ExitCode {
         let lang = load_saved_language();
         apply_language(&lang);
 
-        let gtk_app = ui::main_window::build_gtk_app(
-            app,
-            state_clone.clone(),
-            editor_state_clone.clone(),
-            gui_state_clone.clone(),
-            translations_clone.clone(),
-        );
+        let gtk_app = ui::main_window::build_gtk_app(app, state_clone.clone(), editor_state_clone.clone(), gui_state_clone.clone(), translations_clone.clone());
 
         *current_window_clone.borrow_mut() = Some(gtk_app.window.clone());
 

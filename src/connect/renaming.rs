@@ -4,8 +4,8 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{mpsc, Arc};
 
-use gtk::prelude::*;
 use adw::prelude::*;
+use gtk::prelude::*;
 
 use crate::connect::progress::{hide_progress_dialog, show_progress_dialog, update_progress};
 use crate::files::CHARACTER;
@@ -159,9 +159,7 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
     let failed_total = state.borrow().failed_renames.len();
 
     // Build results dialog
-    let dialog = adw::AlertDialog::builder()
-        .heading(fls!("dialog_results_of_renaming"))
-        .build();
+    let dialog = adw::AlertDialog::builder().heading(fls!("dialog_results_of_renaming")).build();
 
     let content_box = gtk::Box::new(gtk::Orientation::Vertical, 6);
     content_box.set_margin_top(8);
@@ -169,20 +167,11 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
     content_box.set_margin_start(8);
     content_box.set_margin_end(8);
 
-    content_box.append(&gtk::Label::builder()
-        .label(&format!("Properly renamed: {}", result.properly_renamed))
-        .xalign(0.0)
-        .build());
-    content_box.append(&gtk::Label::builder()
-        .label(&format!("Ignored: {}", result.ignored))
-        .xalign(0.0)
-        .build());
+    content_box.append(&gtk::Label::builder().label(&format!("Properly renamed: {}", result.properly_renamed)).xalign(0.0).build());
+    content_box.append(&gtk::Label::builder().label(&format!("Ignored: {}", result.ignored)).xalign(0.0).build());
 
     if failed_total > 0 {
-        let err_label = gtk::Label::builder()
-            .label(&format!("Errors: {}", failed_total))
-            .xalign(0.0)
-            .build();
+        let err_label = gtk::Label::builder().label(&format!("Errors: {}", failed_total)).xalign(0.0).build();
         err_label.add_css_class("error");
         content_box.append(&err_label);
 
@@ -191,12 +180,7 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
         let total_pages = failed_total.div_ceil(page_size);
         let current_page = std::rc::Rc::new(std::cell::Cell::new(0usize));
 
-        let error_text_label = gtk::Label::builder()
-            .xalign(0.0)
-            .wrap(true)
-            .selectable(true)
-            .vexpand(true)
-            .build();
+        let error_text_label = gtk::Label::builder().xalign(0.0).wrap(true).selectable(true).vexpand(true).build();
         error_text_label.add_css_class("card");
         error_text_label.set_margin_top(4);
         error_text_label.set_margin_bottom(4);
@@ -208,11 +192,7 @@ fn finalize_rename(window: &adw::ApplicationWindow, state: &SharedState, result:
             error_text_label.set_label(&lines[..end].join("\n"));
         }
 
-        let scroll = gtk::ScrolledWindow::builder()
-            .child(&error_text_label)
-            .min_content_height(200)
-            .vexpand(true)
-            .build();
+        let scroll = gtk::ScrolledWindow::builder().child(&error_text_label).min_content_height(200).vexpand(true).build();
         content_box.append(&scroll);
 
         // Pagination controls

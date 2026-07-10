@@ -1,14 +1,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use adw::prelude::*;
 use glib::clone;
 use gtk::prelude::*;
-use adw::prelude::*;
 
-use crate::state::SharedState;
 use super::models::{FileRow, RuleRow};
-use super::state_ui::{SharedEditorState, SharedGuiState, SelectMode};
+use super::state_ui::{SelectMode, SharedEditorState, SharedGuiState};
 use super::translations_ui::Translations;
+use crate::state::SharedState;
 
 fn icon_button(label: &str, icon: &str) -> gtk::Button {
     let btn = gtk::Button::new();
@@ -58,11 +58,7 @@ fn rule_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::
 /// Build a native "Sort by" control: a `GtkMenuButton` opening a popover with
 /// checkmarked sort criteria and an ascending/descending toggle (Nautilus style).
 /// `make_sorter` receives the criterion id and whether it is ascending.
-fn build_sort_menu(
-    sort_model: &gtk::SortListModel,
-    labels: &[&str],
-    make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter>,
-) -> gtk::MenuButton {
+fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter>) -> gtk::MenuButton {
     let state = Rc::new(std::cell::RefCell::new((0u32, true))); // (criterion id, ascending)
 
     let mb = gtk::MenuButton::new();
@@ -153,13 +149,7 @@ pub struct GtkApp {
     pub gui_state: SharedGuiState,
 }
 
-pub fn build_gtk_app(
-    app: &adw::Application,
-    state: SharedState,
-    editor_state: SharedEditorState,
-    gui_state: SharedGuiState,
-    translations: Rc<RefCell<Translations>>,
-) -> GtkApp {
+pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: SharedEditorState, gui_state: SharedGuiState, translations: Rc<RefCell<Translations>>) -> GtkApp {
     let window = adw::ApplicationWindow::builder()
         .application(app)
         .title("Szyszka")
@@ -202,7 +192,7 @@ pub fn build_gtk_app(
          }
          .drop-area:drop(active) {
              border-color: @accent_bg_color;
-         }"
+         }",
     );
     // Will be added to display after window is realized
 
@@ -258,7 +248,8 @@ pub fn build_gtk_app(
                     crate::config::create_rules_file_if_needed();
                     let _ = open::that(p);
                 }
-            }).build();
+            })
+            .build();
         app.add_action_entries([action]);
     }
     {
@@ -268,7 +259,8 @@ pub fn build_gtk_app(
                     crate::config::create_custom_text_file_if_needed();
                     let _ = open::that(p);
                 }
-            }).build();
+            })
+            .build();
         app.add_action_entries([action]);
     }
     {
@@ -278,7 +270,8 @@ pub fn build_gtk_app(
                     let _ = std::fs::create_dir_all(&p);
                     let _ = open::that(p);
                 }
-            }).build();
+            })
+            .build();
         app.add_action_entries([action]);
     }
     {
@@ -288,7 +281,8 @@ pub fn build_gtk_app(
                     let _ = std::fs::create_dir_all(&p);
                     let _ = open::that(p);
                 }
-            }).build();
+            })
+            .build();
         app.add_action_entries([action]);
     }
 
@@ -370,14 +364,22 @@ pub fn build_gtk_app(
             if let Ok(list) = value.get::<gtk::gdk::FileList>() {
                 for f in list.files() {
                     if let Some(p) = f.path() {
-                        if p.is_dir() { folders.push(p); } else { files.push(p); }
+                        if p.is_dir() {
+                            folders.push(p);
+                        } else {
+                            files.push(p);
+                        }
                     }
                 }
             }
             // Single GFile
             else if let Ok(file) = value.get::<gio::File>() {
                 if let Some(p) = file.path() {
-                    if p.is_dir() { folders.push(p); } else { files.push(p); }
+                    if p.is_dir() {
+                        folders.push(p);
+                    } else {
+                        files.push(p);
+                    }
                 }
             }
             // text/uri-list: fallback used by some (non-GTK) drag sources
@@ -385,7 +387,11 @@ pub fn build_gtk_app(
                 for uri in uris.split(|c| c == '\r' || c == '\n').filter(|s| !s.is_empty()) {
                     let file = gio::File::for_uri(uri);
                     if let Some(p) = file.path() {
-                        if p.is_dir() { folders.push(p); } else { files.push(p); }
+                        if p.is_dir() {
+                            folders.push(p);
+                        } else {
+                            files.push(p);
+                        }
                     }
                 }
             }
@@ -429,7 +435,8 @@ pub fn build_gtk_app(
         gtk::CustomSorter::new(move |a, b| {
             let ord = file_sort_ordering(id, a, b);
             if asc { ord } else { ord.reverse() }.into()
-        }).upcast()
+        })
+        .upcast()
     });
     let file_sort_btn = build_sort_menu(
         &file_sort_model,
@@ -508,16 +515,10 @@ pub fn build_gtk_app(
         gtk::CustomSorter::new(move |a, b| {
             let ord = rule_sort_ordering(id, a, b);
             (if asc { ord } else { ord.reverse() }).into()
-        }).upcast()
+        })
+        .upcast()
     });
-    let rule_sort_btn = build_sort_menu(
-        &rule_sort_model,
-        &[
-            &crate::fls!("sort_type"),
-            &crate::fls!("sort_usage"),
-        ],
-        rule_make_sorter,
-    );
+    let rule_sort_btn = build_sort_menu(&rule_sort_model, &[&crate::fls!("sort_type"), &crate::fls!("sort_usage")], rule_make_sorter);
 
     // Rules card header
     let rule_status = gtk::Label::new(Some(&crate::fls!("bottom_rule_label_rules")));
@@ -554,11 +555,7 @@ pub fn build_gtk_app(
         let cp = css_provider.clone();
         window.connect_realize(move |w| {
             let display = gtk::prelude::WidgetExt::display(w);
-            gtk::style_context_add_provider_for_display(
-                &display,
-                &cp,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
+            gtk::style_context_add_provider_for_display(&display, &cp, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
         });
     }
 
@@ -633,23 +630,25 @@ pub fn build_gtk_app(
                             if let Some(msg_lbl) = vbox.first_child().and_then(|w| w.next_sibling()).and_then(|w| w.downcast_ref::<gtk::Label>().cloned()) {
                                 msg_lbl.set_label(&message);
                             }
-                            if let Some(bar) = vbox.first_child().and_then(|w| w.next_sibling()).and_then(|w| w.next_sibling()).and_then(|w| w.downcast_ref::<gtk::ProgressBar>().cloned()) {
+                            if let Some(bar) = vbox
+                                .first_child()
+                                .and_then(|w| w.next_sibling())
+                                .and_then(|w| w.next_sibling())
+                                .and_then(|w| w.downcast_ref::<gtk::ProgressBar>().cloned())
+                            {
                                 bar.set_fraction(fraction);
                             }
                         }
                     }
                 } else {
                     // Create new dialog
-                    let dlg = adw::Dialog::builder()
-                        .title(&title)
-                        .content_width(400)
-                        .content_height(160)
-                        .can_close(false)
-                        .build();
+                    let dlg = adw::Dialog::builder().title(&title).content_width(400).content_height(160).can_close(false).build();
 
                     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 8);
-                    vbox.set_margin_top(16); vbox.set_margin_bottom(16);
-                    vbox.set_margin_start(16); vbox.set_margin_end(16);
+                    vbox.set_margin_top(16);
+                    vbox.set_margin_bottom(16);
+                    vbox.set_margin_start(16);
+                    vbox.set_margin_end(16);
 
                     let title_lbl = gtk::Label::builder().label(&title).xalign(0.0).build();
                     title_lbl.add_css_class("heading");
@@ -857,32 +856,49 @@ pub fn build_gtk_app(
                 .content_height(400)
                 .build();
             let vbox = gtk::Box::new(gtk::Orientation::Vertical, 8);
-            vbox.set_margin_top(12); vbox.set_margin_bottom(12);
-            vbox.set_margin_start(12); vbox.set_margin_end(12);
+            vbox.set_margin_top(12);
+            vbox.set_margin_bottom(12);
+            vbox.set_margin_start(12);
+            vbox.set_margin_end(12);
             let list_box = gtk::ListBox::new();
             list_box.add_css_class("boxed-list");
             for (i, entry) in all.iter().enumerate() {
                 let row = adw::ActionRow::builder().title(&entry.name).activatable(false).build();
                 let load_btn = gtk::Button::with_label(&crate::fls!("rule_editor_load"));
-                load_btn.add_css_class("flat"); load_btn.add_css_class("suggested-action");
-                let st = state.clone(); let store2 = rule_store.clone(); let fs = file_store_c.clone();
-                let gs2 = gs.clone(); let d = dialog.clone(); let idx = i as i32;
+                load_btn.add_css_class("flat");
+                load_btn.add_css_class("suggested-action");
+                let st = state.clone();
+                let store2 = rule_store.clone();
+                let fs = file_store_c.clone();
+                let gs2 = gs.clone();
+                let d = dialog.clone();
+                let idx = i as i32;
                 load_btn.connect_clicked(move |_| {
                     crate::connect::rules_ops::load_rule_set(&store2, &fs, &st, &gs2, idx);
                     d.close();
                 });
                 row.add_suffix(&load_btn);
                 let del_btn = gtk::Button::from_icon_name("user-trash-symbolic");
-                del_btn.add_css_class("flat"); del_btn.add_css_class("destructive-action");
-                let d2 = dialog.clone(); let idx = i as i32;
-                del_btn.connect_clicked(move |_| { crate::connect::rules_ops::delete_rule_set(idx); d2.close(); });
+                del_btn.add_css_class("flat");
+                del_btn.add_css_class("destructive-action");
+                let d2 = dialog.clone();
+                let idx = i as i32;
+                del_btn.connect_clicked(move |_| {
+                    crate::connect::rules_ops::delete_rule_set(idx);
+                    d2.close();
+                });
                 row.add_suffix(&del_btn);
                 list_box.append(&row);
             }
             vbox.append(&list_box);
             let close_btn = gtk::Button::with_label(&crate::fls!("dialog_button_cancel"));
             close_btn.set_halign(gtk::Align::End);
-            { let d = dialog.clone(); close_btn.connect_clicked(move |_| { d.close(); }); }
+            {
+                let d = dialog.clone();
+                close_btn.connect_clicked(move |_| {
+                    d.close();
+                });
+            }
             vbox.append(&close_btn);
             dialog.set_child(Some(&vbox));
             dialog.present(Some(&window));
@@ -935,9 +951,7 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
     let saved_lang = crate::config::load_saved_language();
     let lang_combo = adw::ComboRow::builder()
         .title(&crate::fls!("settings_language_label"))
-        .model(&gtk::StringList::new(
-            &crate::language::LANGUAGES_ALL.iter().map(|l| l.combo_box_text).collect::<Vec<_>>()
-        ))
+        .model(&gtk::StringList::new(&crate::language::LANGUAGES_ALL.iter().map(|l| l.combo_box_text).collect::<Vec<_>>()))
         .selected(crate::language::LANGUAGES_ALL.iter().position(|l| l.combo_box_text == saved_lang).unwrap_or(0) as u32)
         .build();
     {
@@ -956,7 +970,10 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
                 confirm.add_response("restart", &crate::fls!("dialog_language_restart"));
                 confirm.set_response_appearance("restart", adw::ResponseAppearance::Suggested);
                 let w2 = w.clone();
-                confirm.connect_response(Some("restart"), move |_, _| { w2.close(); w2.application().unwrap().activate(); });
+                confirm.connect_response(Some("restart"), move |_, _| {
+                    w2.close();
+                    w2.application().unwrap().activate();
+                });
                 confirm.present(Some(&w));
             }
         });
@@ -968,7 +985,10 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
 }
 
 fn show_select_popup(window: &adw::ApplicationWindow, file_store: &gio::ListStore, state: &SharedState, _gui_state: &SharedGuiState) {
-    let dialog = adw::AlertDialog::builder().heading(&crate::fls!("dialog_select")).body(&crate::fls!("dialog_select_body")).build();
+    let dialog = adw::AlertDialog::builder()
+        .heading(&crate::fls!("dialog_select"))
+        .body(&crate::fls!("dialog_select_body"))
+        .build();
     dialog.add_response("all", &crate::fls!("button_select_all"));
     dialog.add_response("none", &crate::fls!("button_unselect_all"));
     dialog.add_response("reverse", &crate::fls!("button_select_reverse"));
@@ -979,25 +999,30 @@ fn show_select_popup(window: &adw::ApplicationWindow, file_store: &gio::ListStor
     let st = state.clone();
     let w = window.clone();
     let gs = _gui_state.clone();
-    dialog.connect_response(None, move |_, response| {
-        match response {
-            "all" => crate::connect::select::apply_select(&store, &st, SelectMode::SelectAll),
-            "none" => crate::connect::select::apply_select(&store, &st, SelectMode::UnselectAll),
-            "reverse" => crate::connect::select::apply_select(&store, &st, SelectMode::Reverse),
-            "changed" => crate::connect::select::apply_select(&store, &st, SelectMode::SelectChanged),
-            "unchanged" => crate::connect::select::apply_select(&store, &st, SelectMode::UnselectChanged),
-            "custom" => { show_select_custom_dialog(&w, &store, &st, &gs); }
-            _ => {}
+    dialog.connect_response(None, move |_, response| match response {
+        "all" => crate::connect::select::apply_select(&store, &st, SelectMode::SelectAll),
+        "none" => crate::connect::select::apply_select(&store, &st, SelectMode::UnselectAll),
+        "reverse" => crate::connect::select::apply_select(&store, &st, SelectMode::Reverse),
+        "changed" => crate::connect::select::apply_select(&store, &st, SelectMode::SelectChanged),
+        "unchanged" => crate::connect::select::apply_select(&store, &st, SelectMode::UnselectChanged),
+        "custom" => {
+            show_select_custom_dialog(&w, &store, &st, &gs);
         }
+        _ => {}
     });
     dialog.present(Some(window));
 }
 
 pub fn show_select_custom_dialog(window: &adw::ApplicationWindow, file_store: &gio::ListStore, state: &SharedState, _gui_state: &SharedGuiState) {
-    let dialog = adw::AlertDialog::builder().heading(&crate::fls!("dialog_select_custom_title")).body(&crate::fls!("dialog_select_custom_body")).build();
+    let dialog = adw::AlertDialog::builder()
+        .heading(&crate::fls!("dialog_select_custom_title"))
+        .body(&crate::fls!("dialog_select_custom_body"))
+        .build();
     let content_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    content_box.set_margin_top(8); content_box.set_margin_bottom(8);
-    content_box.set_margin_start(8); content_box.set_margin_end(8);
+    content_box.set_margin_top(8);
+    content_box.set_margin_bottom(8);
+    content_box.set_margin_start(8);
+    content_box.set_margin_end(8);
     let pattern_entry = gtk::Entry::builder().placeholder_text(&crate::fls!("dialog_select_custom_pattern")).hexpand(true).build();
     content_box.append(&pattern_entry);
     let include_dirs_check = gtk::CheckButton::with_label(&crate::fls!("dialog_select_custom_include_dirs"));
@@ -1005,9 +1030,12 @@ pub fn show_select_custom_dialog(window: &adw::ApplicationWindow, file_store: &g
     content_box.append(&include_dirs_check);
     content_box.append(&gtk::Label::builder().label(&crate::fls!("ctrl_match_against")).xalign(0.0).build());
     let mode_combo = gtk::DropDown::from_strings(&[
-        &crate::fls!("select_custom_path"), &crate::fls!("select_custom_current_path"),
-        &crate::fls!("select_custom_future_path"), &crate::fls!("select_custom_path_current_name"),
-        &crate::fls!("select_custom_path_future_name"), &crate::fls!("select_custom_directory_file"),
+        &crate::fls!("select_custom_path"),
+        &crate::fls!("select_custom_current_path"),
+        &crate::fls!("select_custom_future_path"),
+        &crate::fls!("select_custom_path_current_name"),
+        &crate::fls!("select_custom_path_future_name"),
+        &crate::fls!("select_custom_directory_file"),
     ]);
     content_box.append(&mode_combo);
     let hint = gtk::Label::builder().label(&crate::fls!("select_custom_hint")).wrap(true).xalign(0.0).build();
@@ -1043,8 +1071,10 @@ pub fn show_add_folders_dialog(window: &adw::ApplicationWindow, state: &SharedSt
         .body(&crate::fls!("dialog_add_folders_body"))
         .build();
     let content_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    content_box.set_margin_top(8); content_box.set_margin_bottom(8);
-    content_box.set_margin_start(8); content_box.set_margin_end(8);
+    content_box.set_margin_top(8);
+    content_box.set_margin_bottom(8);
+    content_box.set_margin_start(8);
+    content_box.set_margin_end(8);
     {
         let gs = gui_state.borrow();
         let paths = &gs.add_folder_picked_paths;
@@ -1164,15 +1194,49 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
     state.borrow_mut().file_selection = Some(selection.clone());
     state.borrow_mut().file_sort_model = Some(sort_model.clone());
     // Double-click to open file
-    { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
-        gesture.connect_pressed(move |_, n_press, _, _| { if n_press == 2 { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.full_name); } } } }); list_view.add_controller(gesture); }
+    {
+        let st = state.clone();
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(1);
+        gesture.connect_pressed(move |_, n_press, _, _| {
+            if n_press == 2 {
+                let s = st.borrow();
+                if let Some(idx) = s.file_selected.iter().position(|x| *x) {
+                    if let Some(item) = s.files.get(idx) {
+                        let _ = open::that(&item.full_name);
+                    }
+                }
+            }
+        });
+        list_view.add_controller(gesture);
+    }
     // Right-click to open containing folder
-    { let st = state.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(3);
-        gesture.connect_released(move |_, _, _, _| { let s = st.borrow(); if let Some(idx) = s.file_selected.iter().position(|x| *x) { if let Some(item) = s.files.get(idx) { let _ = open::that(&item.path); } } }); list_view.add_controller(gesture); }
+    {
+        let st = state.clone();
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(3);
+        gesture.connect_released(move |_, _, _, _| {
+            let s = st.borrow();
+            if let Some(idx) = s.file_selected.iter().position(|x| *x) {
+                if let Some(item) = s.files.get(idx) {
+                    let _ = open::that(&item.path);
+                }
+            }
+        });
+        list_view.add_controller(gesture);
+    }
     (list_view, file_store, selection, sort_model)
 }
 
-fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, editor_state: &SharedEditorState, rule_store: &gio::ListStore, file_store: &gio::ListStore, gui_state: &SharedGuiState, window: &adw::ApplicationWindow) -> (gtk::ListView, gtk::SortListModel) {
+fn build_rule_list_view(
+    selection: &gtk::MultiSelection,
+    state: &SharedState,
+    editor_state: &SharedEditorState,
+    rule_store: &gio::ListStore,
+    file_store: &gio::ListStore,
+    gui_state: &SharedGuiState,
+    window: &adw::ApplicationWindow,
+) -> (gtk::ListView, gtk::SortListModel) {
     // Row: [icon] [type (title) / usage (subtitle)]
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(|_, list_item| {
@@ -1245,11 +1309,22 @@ fn build_rule_list_view(selection: &gtk::MultiSelection, state: &SharedState, ed
     list_view.set_show_separators(false);
     list_view.set_single_click_activate(false);
     // Double-click to edit rule
-    { let st = state.clone(); let es = editor_state.clone(); let rs = rule_store.clone();
-      let fs = file_store.clone(); let gs = gui_state.clone(); let w = window.clone(); let gesture = gtk::GestureClick::new(); gesture.set_button(1);
-      gesture.connect_released(move |_, n_press, _, _| { if n_press >= 2 {
-          let idx = st.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(0);
-          super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &fs, &gs, Some(idx));
-      }}); list_view.add_controller(gesture); }
+    {
+        let st = state.clone();
+        let es = editor_state.clone();
+        let rs = rule_store.clone();
+        let fs = file_store.clone();
+        let gs = gui_state.clone();
+        let w = window.clone();
+        let gesture = gtk::GestureClick::new();
+        gesture.set_button(1);
+        gesture.connect_released(move |_, n_press, _, _| {
+            if n_press >= 2 {
+                let idx = st.borrow().rule_selected.iter().position(|x| *x).map(|i| i as i32).unwrap_or(0);
+                super::rule_editor::show_rule_editor(&w, &es, &st, &rs, &fs, &gs, Some(idx));
+            }
+        });
+        list_view.add_controller(gesture);
+    }
     (list_view, sort_model)
 }

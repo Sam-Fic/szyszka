@@ -55,7 +55,5 @@ pub fn setup_logger() {
 }
 
 fn filtering_messages(record: &Record) -> bool {
-    record
-        .module_path()
-        .is_none_or(|module_path| module_path.starts_with("szyszka"))
+    record.module_path().is_none_or(|module_path| module_path.starts_with("szyszka"))
 }

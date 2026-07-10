@@ -4,8 +4,10 @@ fn main() {
 
     let status = std::process::Command::new("glib-compile-resources")
         .args([
-            "--sourcedir", "data",
-            "--target", &format!("{}/com.github.samfic.szyszka.gresource", out_dir),
+            "--sourcedir",
+            "data",
+            "--target",
+            &format!("{}/com.github.samfic.szyszka.gresource", out_dir),
             gresource_xml.to_str().unwrap(),
         ])
         .status()

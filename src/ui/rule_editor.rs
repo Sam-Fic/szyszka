@@ -1,9 +1,9 @@
-use gtk::prelude::*;
 use adw::prelude::*;
+use gtk::prelude::*;
 
+use super::state_ui::{NotebookTab, SharedEditorState, SharedGuiState};
 use crate::rule::rules::RulePlace;
 use crate::state::SharedState;
-use super::state_ui::{NotebookTab, SharedEditorState, SharedGuiState};
 
 fn icon_button(label: &str, icon: &str) -> gtk::Button {
     let btn = gtk::Button::new();
@@ -15,12 +15,15 @@ fn icon_button(label: &str, icon: &str) -> gtk::Button {
     btn
 }
 
-fn combo_row(title: &str, options: &[&str], active: usize, es: &SharedEditorState, after_label: &gtk::Label, set_val: impl Fn(&mut crate::ui::state_ui::EditorState, u32) + 'static) -> adw::ComboRow {
-    let combo = adw::ComboRow::builder()
-        .title(title)
-        .model(&gtk::StringList::new(options))
-        .selected(active as u32)
-        .build();
+fn combo_row(
+    title: &str,
+    options: &[&str],
+    active: usize,
+    es: &SharedEditorState,
+    after_label: &gtk::Label,
+    set_val: impl Fn(&mut crate::ui::state_ui::EditorState, u32) + 'static,
+) -> adw::ComboRow {
+    let combo = adw::ComboRow::builder().title(title).model(&gtk::StringList::new(options)).selected(active as u32).build();
     let es = es.clone();
     let lbl = after_label.clone();
     combo.connect_selected_notify(move |c| {
@@ -31,7 +34,13 @@ fn combo_row(title: &str, options: &[&str], active: usize, es: &SharedEditorStat
     combo
 }
 
-fn entry_row(title: &str, text: &str, es: &SharedEditorState, after_label: &gtk::Label, set_val: impl Fn(&mut crate::ui::state_ui::EditorState, String) + 'static) -> adw::EntryRow {
+fn entry_row(
+    title: &str,
+    text: &str,
+    es: &SharedEditorState,
+    after_label: &gtk::Label,
+    set_val: impl Fn(&mut crate::ui::state_ui::EditorState, String) + 'static,
+) -> adw::EntryRow {
     let row = adw::EntryRow::builder().title(title).text(text).build();
     let es = es.clone();
     let lbl = after_label.clone();
@@ -43,7 +52,13 @@ fn entry_row(title: &str, text: &str, es: &SharedEditorState, after_label: &gtk:
     row
 }
 
-fn switch_row(title: &str, active: bool, es: &SharedEditorState, after_label: &gtk::Label, set_val: impl Fn(&mut crate::ui::state_ui::EditorState, bool) + 'static) -> adw::SwitchRow {
+fn switch_row(
+    title: &str,
+    active: bool,
+    es: &SharedEditorState,
+    after_label: &gtk::Label,
+    set_val: impl Fn(&mut crate::ui::state_ui::EditorState, bool) + 'static,
+) -> adw::SwitchRow {
     let row = adw::SwitchRow::builder().title(title).active(active).build();
     let es = es.clone();
     let lbl = after_label.clone();
@@ -102,7 +117,10 @@ pub fn show_rule_editor(
     content.append(&sidebar);
 
     let after_label = gtk::Label::builder().hexpand(true).xalign(0.0).build();
-    { let es = editor_state.borrow(); after_label.set_text(&es.example_after_text); }
+    {
+        let es = editor_state.borrow();
+        after_label.set_text(&es.example_after_text);
+    }
 
     let after_label_ref = after_label.clone();
 
@@ -122,9 +140,7 @@ pub fn show_rule_editor(
         desc_group.add(&instruction);
         page.add(&desc_group);
 
-        let entry_group = adw::PreferencesGroup::builder()
-            .title("Template")
-            .build();
+        let entry_group = adw::PreferencesGroup::builder().title("Template").build();
         let entry = gtk::Entry::builder()
             .text(&editor_state.borrow().custom_text)
             .hexpand(true)
@@ -136,7 +152,9 @@ pub fn show_rule_editor(
             let lbl = after_label.clone();
             let sc = suppress_change.clone();
             entry.connect_changed(move |e| {
-                if sc.get() { return; }
+                if sc.get() {
+                    return;
+                }
                 es.borrow_mut().custom_text = e.text().to_string();
                 crate::connect::rules_ops::update_example(&es, &SharedState::default());
                 lbl.set_text(&es.borrow().example_after_text);
@@ -223,8 +241,32 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::new();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("rule_editor_tool_type"), &[&crate::fls!("ctrl_lowercase"), &crate::fls!("ctrl_uppercase")], if es.case_lowercase { 0 } else { 1 }, editor_state, &after_label, |es, v| es.case_lowercase = v == 0));
-        group.add(&combo_row(&crate::fls!("rule_editor_usage_type"), &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")], match es.case_place { RulePlace::Name => 0, RulePlace::Extension => 1, _ => 2 }, editor_state, &after_label, |es, v| es.case_place = match v { 0 => RulePlace::Name, 1 => RulePlace::Extension, _ => RulePlace::ExtensionAndName }));
+        group.add(&combo_row(
+            &crate::fls!("rule_editor_tool_type"),
+            &[&crate::fls!("ctrl_lowercase"), &crate::fls!("ctrl_uppercase")],
+            if es.case_lowercase { 0 } else { 1 },
+            editor_state,
+            &after_label,
+            |es, v| es.case_lowercase = v == 0,
+        ));
+        group.add(&combo_row(
+            &crate::fls!("rule_editor_usage_type"),
+            &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")],
+            match es.case_place {
+                RulePlace::Name => 0,
+                RulePlace::Extension => 1,
+                _ => 2,
+            },
+            editor_state,
+            &after_label,
+            |es, v| {
+                es.case_place = match v {
+                    0 => RulePlace::Name,
+                    1 => RulePlace::Extension,
+                    _ => RulePlace::ExtensionAndName,
+                }
+            },
+        ));
         drop(es);
         page.add(&group);
         stack.add_titled(&page, Some("case"), &crate::fls!("tab_case_size"));
@@ -236,7 +278,24 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::new();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("rule_editor_usage_type"), &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")], match es.purge_place { RulePlace::Name => 0, RulePlace::Extension => 1, _ => 2 }, editor_state, &after_label, |es, v| es.purge_place = match v { 0 => RulePlace::Name, 1 => RulePlace::Extension, _ => RulePlace::ExtensionAndName }));
+        group.add(&combo_row(
+            &crate::fls!("rule_editor_usage_type"),
+            &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")],
+            match es.purge_place {
+                RulePlace::Name => 0,
+                RulePlace::Extension => 1,
+                _ => 2,
+            },
+            editor_state,
+            &after_label,
+            |es, v| {
+                es.purge_place = match v {
+                    0 => RulePlace::Name,
+                    1 => RulePlace::Extension,
+                    _ => RulePlace::ExtensionAndName,
+                }
+            },
+        ));
         drop(es);
         page.add(&group);
         stack.add_titled(&page, Some("purge"), &crate::fls!("tab_purge"));
@@ -248,13 +307,30 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::builder().title(&crate::fls!("label_add_number_place")).build();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("label_add_number_place"), &[&crate::fls!("ctrl_before_name"), &crate::fls!("ctrl_after_name")], match es.add_number_place { RulePlace::BeforeName => 0, _ => 1 }, editor_state, &after_label, |es, v| es.add_number_place = if v == 0 { RulePlace::BeforeName } else { RulePlace::AfterName }));
+        group.add(&combo_row(
+            &crate::fls!("label_add_number_place"),
+            &[&crate::fls!("ctrl_before_name"), &crate::fls!("ctrl_after_name")],
+            match es.add_number_place {
+                RulePlace::BeforeName => 0,
+                _ => 1,
+            },
+            editor_state,
+            &after_label,
+            |es, v| es.add_number_place = if v == 0 { RulePlace::BeforeName } else { RulePlace::AfterName },
+        ));
         let settings_group = adw::PreferencesGroup::builder().title(&crate::fls!("label_add_number_settings")).build();
-        settings_group.add(&entry_row(&crate::fls!("ctrl_start_number"), &es.add_number_start, editor_state, &after_label, |es, v| es.add_number_start = v));
-        settings_group.add(&entry_row(&crate::fls!("ctrl_step"), &es.add_number_step, editor_state, &after_label, |es, v| es.add_number_step = v));
-        settings_group.add(&entry_row(&crate::fls!("ctrl_fill_zeros"), &es.add_number_zeros, editor_state, &after_label, |es, v| es.add_number_zeros = v));
+        settings_group.add(&entry_row(&crate::fls!("ctrl_start_number"), &es.add_number_start, editor_state, &after_label, |es, v| {
+            es.add_number_start = v
+        }));
+        settings_group.add(&entry_row(&crate::fls!("ctrl_step"), &es.add_number_step, editor_state, &after_label, |es, v| {
+            es.add_number_step = v
+        }));
+        settings_group.add(&entry_row(&crate::fls!("ctrl_fill_zeros"), &es.add_number_zeros, editor_state, &after_label, |es, v| {
+            es.add_number_zeros = v
+        }));
         drop(es);
-        page.add(&group); page.add(&settings_group);
+        page.add(&group);
+        page.add(&settings_group);
         stack.add_titled(&page, Some("add_number"), &crate::fls!("tab_add_number"));
         stack.page(&page).set_icon_name("format-number-symbolic");
     }
@@ -264,8 +340,20 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::new();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("rule_editor_usage_type"), &[&crate::fls!("ctrl_before_name"), &crate::fls!("ctrl_after_name")], match es.add_text_place { RulePlace::BeforeName => 0, _ => 1 }, editor_state, &after_label, |es, v| es.add_text_place = if v == 0 { RulePlace::BeforeName } else { RulePlace::AfterName }));
-        group.add(&entry_row(&crate::fls!("label_add_text"), &es.add_text_text, editor_state, &after_label, |es, v| es.add_text_text = v));
+        group.add(&combo_row(
+            &crate::fls!("rule_editor_usage_type"),
+            &[&crate::fls!("ctrl_before_name"), &crate::fls!("ctrl_after_name")],
+            match es.add_text_place {
+                RulePlace::BeforeName => 0,
+                _ => 1,
+            },
+            editor_state,
+            &after_label,
+            |es, v| es.add_text_place = if v == 0 { RulePlace::BeforeName } else { RulePlace::AfterName },
+        ));
+        group.add(&entry_row(&crate::fls!("label_add_text"), &es.add_text_text, editor_state, &after_label, |es, v| {
+            es.add_text_text = v
+        }));
         drop(es);
         page.add(&group);
         stack.add_titled(&page, Some("add_text"), &crate::fls!("tab_add_text"));
@@ -277,12 +365,56 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::builder().title(&crate::fls!("tab_replace")).build();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("ctrl_match_against"), &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")], match es.replace_place { RulePlace::Name => 0, RulePlace::Extension => 1, _ => 2 }, editor_state, &after_label, |es, v| es.replace_place = match v { 0 => RulePlace::Name, 1 => RulePlace::Extension, _ => RulePlace::ExtensionAndName }));
-        group.add(&combo_row(&crate::fls!("label_usage_type"), &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")], if es.replace_case_sensitive { 0 } else { 1 }, editor_state, &after_label, |es, v| es.replace_case_sensitive = v == 0));
-        group.add(&switch_row(&crate::fls!("ctrl_use_regex"), es.replace_use_regex, editor_state, &after_label, |es, v| es.replace_use_regex = v));
-        group.add(&switch_row(&crate::fls!("ctrl_replace_all"), es.replace_all_occurrences, editor_state, &after_label, |es, v| es.replace_all_occurrences = v));
-        group.add(&entry_row(&crate::fls!("ctrl_text_to_find"), &es.replace_text_to_find, editor_state, &after_label, |es, v| es.replace_text_to_find = v));
-        group.add(&entry_row(&crate::fls!("ctrl_text_to_replace"), &es.replace_text_to_replace, editor_state, &after_label, |es, v| es.replace_text_to_replace = v));
+        group.add(&combo_row(
+            &crate::fls!("ctrl_match_against"),
+            &[&crate::fls!("ctrl_only_name"), &crate::fls!("ctrl_only_extension"), &crate::fls!("ctrl_both")],
+            match es.replace_place {
+                RulePlace::Name => 0,
+                RulePlace::Extension => 1,
+                _ => 2,
+            },
+            editor_state,
+            &after_label,
+            |es, v| {
+                es.replace_place = match v {
+                    0 => RulePlace::Name,
+                    1 => RulePlace::Extension,
+                    _ => RulePlace::ExtensionAndName,
+                }
+            },
+        ));
+        group.add(&combo_row(
+            &crate::fls!("label_usage_type"),
+            &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")],
+            if es.replace_case_sensitive { 0 } else { 1 },
+            editor_state,
+            &after_label,
+            |es, v| es.replace_case_sensitive = v == 0,
+        ));
+        group.add(&switch_row(&crate::fls!("ctrl_use_regex"), es.replace_use_regex, editor_state, &after_label, |es, v| {
+            es.replace_use_regex = v
+        }));
+        group.add(&switch_row(
+            &crate::fls!("ctrl_replace_all"),
+            es.replace_all_occurrences,
+            editor_state,
+            &after_label,
+            |es, v| es.replace_all_occurrences = v,
+        ));
+        group.add(&entry_row(
+            &crate::fls!("ctrl_text_to_find"),
+            &es.replace_text_to_find,
+            editor_state,
+            &after_label,
+            |es, v| es.replace_text_to_find = v,
+        ));
+        group.add(&entry_row(
+            &crate::fls!("ctrl_text_to_replace"),
+            &es.replace_text_to_replace,
+            editor_state,
+            &after_label,
+            |es, v| es.replace_text_to_replace = v,
+        ));
         drop(es);
         page.add(&group);
         stack.add_titled(&page, Some("replace"), &crate::fls!("tab_replace"));
@@ -294,9 +426,42 @@ pub fn show_rule_editor(
         let page = adw::PreferencesPage::new();
         let group = adw::PreferencesGroup::builder().title(&crate::fls!("tab_trim")).build();
         let es = editor_state.borrow();
-        group.add(&combo_row(&crate::fls!("ctrl_match_against"), &[&crate::fls!("ctrl_name_start"), &crate::fls!("ctrl_name_end"), &crate::fls!("ctrl_extension_start"), &crate::fls!("ctrl_extension_end")], match es.trim_place { RulePlace::FromNameStart => 0, RulePlace::FromNameEndReverse => 1, RulePlace::FromExtensionStart => 2, _ => 3 }, editor_state, &after_label, |es, v| es.trim_place = match v { 0 => RulePlace::FromNameStart, 1 => RulePlace::FromNameEndReverse, 2 => RulePlace::FromExtensionStart, _ => RulePlace::FromExtensionEndReverse }));
-        group.add(&combo_row(&crate::fls!("label_usage_type"), &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")], if es.trim_case_sensitive { 0 } else { 1 }, editor_state, &after_label, |es, v| es.trim_case_sensitive = v == 0));
-        group.add(&entry_row(&crate::fls!("ctrl_trim_text"), &es.trim_text, editor_state, &after_label, |es, v| es.trim_text = v));
+        group.add(&combo_row(
+            &crate::fls!("ctrl_match_against"),
+            &[
+                &crate::fls!("ctrl_name_start"),
+                &crate::fls!("ctrl_name_end"),
+                &crate::fls!("ctrl_extension_start"),
+                &crate::fls!("ctrl_extension_end"),
+            ],
+            match es.trim_place {
+                RulePlace::FromNameStart => 0,
+                RulePlace::FromNameEndReverse => 1,
+                RulePlace::FromExtensionStart => 2,
+                _ => 3,
+            },
+            editor_state,
+            &after_label,
+            |es, v| {
+                es.trim_place = match v {
+                    0 => RulePlace::FromNameStart,
+                    1 => RulePlace::FromNameEndReverse,
+                    2 => RulePlace::FromExtensionStart,
+                    _ => RulePlace::FromExtensionEndReverse,
+                }
+            },
+        ));
+        group.add(&combo_row(
+            &crate::fls!("label_usage_type"),
+            &[&crate::fls!("ctrl_case_sensitive"), &crate::fls!("ctrl_case_insensitive")],
+            if es.trim_case_sensitive { 0 } else { 1 },
+            editor_state,
+            &after_label,
+            |es, v| es.trim_case_sensitive = v == 0,
+        ));
+        group.add(&entry_row(&crate::fls!("ctrl_trim_text"), &es.trim_text, editor_state, &after_label, |es, v| {
+            es.trim_text = v
+        }));
         drop(es);
         page.add(&group);
         stack.add_titled(&page, Some("trim"), &crate::fls!("tab_trim"));
@@ -324,7 +489,8 @@ pub fn show_rule_editor(
             &crate::fls!("rule_editor_usage_type"),
             &[&crate::fls!("ctrl_everything"), &crate::fls!("ctrl_partial")],
             if editor_state.borrow().normalize_full { 0 } else { 1 },
-            editor_state, &after_label,
+            editor_state,
+            &after_label,
             |es, v| es.normalize_full = v == 0,
         ));
         page.add(&options_group);
@@ -334,18 +500,21 @@ pub fn show_rule_editor(
     }
 
     stack.set_visible_child_name(match editor_state.borrow().current_tab {
-        NotebookTab::Custom => "custom", NotebookTab::CaseSize => "case", NotebookTab::Purge => "purge",
-        NotebookTab::AddNumber => "add_number", NotebookTab::AddText => "add_text", NotebookTab::Replace => "replace",
-        NotebookTab::Trim => "trim", NotebookTab::Normalize => "normalize",
+        NotebookTab::Custom => "custom",
+        NotebookTab::CaseSize => "case",
+        NotebookTab::Purge => "purge",
+        NotebookTab::AddNumber => "add_number",
+        NotebookTab::AddText => "add_text",
+        NotebookTab::Replace => "replace",
+        NotebookTab::Trim => "trim",
+        NotebookTab::Normalize => "normalize",
     });
 
     // Sync current_tab when user switches sidebar tabs.
     {
         let es = editor_state.clone();
         stack.connect_notify_local(Some("visible-child"), move |stack, _| {
-            let name = stack.visible_child_name()
-                .map(|n| n.as_str().to_owned())
-                .unwrap_or_default();
+            let name = stack.visible_child_name().map(|n| n.as_str().to_owned()).unwrap_or_default();
             let tab = match name.as_str() {
                 "custom" => NotebookTab::Custom,
                 "case" => NotebookTab::CaseSize,
@@ -362,9 +531,7 @@ pub fn show_rule_editor(
     }
 
     // Example panel - use adw::PreferencesGroup for native card style
-    let example_group = adw::PreferencesGroup::builder()
-        .title(&crate::fls!("rule_editor_example"))
-        .build();
+    let example_group = adw::PreferencesGroup::builder().title(&crate::fls!("rule_editor_example")).build();
 
     let before_entry = adw::EntryRow::builder()
         .title(&crate::fls!("rule_editor_example_before"))
@@ -392,10 +559,7 @@ pub fn show_rule_editor(
     before_entry.add_suffix(&reset_btn);
     example_group.add(&before_entry);
 
-    let after_row = adw::ActionRow::builder()
-        .title(&crate::fls!("rule_editor_example_after"))
-        .activatable(false)
-        .build();
+    let after_row = adw::ActionRow::builder().title(&crate::fls!("rule_editor_example_after")).activatable(false).build();
     after_label.set_halign(gtk::Align::End);
     after_label.set_hexpand(true);
     after_label.add_css_class("heading");
@@ -438,10 +602,28 @@ pub fn show_rule_editor(
     editor_dialog.set_child(Some(&root));
 
     // Cancel
-    { let gs = gui_state.clone(); let d = editor_dialog.clone(); cancel_btn.connect_clicked(move |_| { crate::connect::rules_ops::close_editor(&gs); d.close(); }); }
+    {
+        let gs = gui_state.clone();
+        let d = editor_dialog.clone();
+        cancel_btn.connect_clicked(move |_| {
+            crate::connect::rules_ops::close_editor(&gs);
+            d.close();
+        });
+    }
 
     // Add
-    { let state = state.clone(); let rstore = rule_store.clone(); let fstore = file_store.clone(); let gs = gui_state.clone(); let d = editor_dialog.clone(); let es = editor_state.clone(); add_btn.connect_clicked(move |_| { crate::connect::rules_ops::add_or_update_rule(&es, &rstore, &fstore, &state, &gs); d.close(); }); }
+    {
+        let state = state.clone();
+        let rstore = rule_store.clone();
+        let fstore = file_store.clone();
+        let gs = gui_state.clone();
+        let d = editor_dialog.clone();
+        let es = editor_state.clone();
+        add_btn.connect_clicked(move |_| {
+            crate::connect::rules_ops::add_or_update_rule(&es, &rstore, &fstore, &state, &gs);
+            d.close();
+        });
+    }
 
     editor_dialog.present(Some(window));
 }
