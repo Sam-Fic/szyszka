@@ -31,3 +31,6 @@ ___*
 .DS_Store
 Thumbs.db
 data/com.github.samfic.szyszka.gresource
+vendor/
+.flatpak-builder/
+build-dir/

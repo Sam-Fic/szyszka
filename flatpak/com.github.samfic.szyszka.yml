@@ -1,0 +1,39 @@
+app-id: com.github.samfic.szyszka
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: szyszka
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+
+modules:
+  - name: szyszka
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      append-ld-library-path: /usr/lib/sdk/rust-stable/lib
+      env:
+        CARGO_HOME: /run/build/szyszka/cargo
+    build-commands:
+      - cargo --offline build --release
+      - install -Dm755 target/release/szyszka /app/bin/szyszka
+      - install -Dm644 data/com.github.samfic.szyszka.desktop /app/share/applications/com.github.samfic.szyszka.desktop
+      - install -Dm644 data/com.github.samfic.szyszka.metainfo.xml /app/share/metainfo/com.github.samfic.szyszka.metainfo.xml
+      - install -Dm644 data/icons/com.github.samfic.szyszka.svg /app/share/icons/hicolor/scalable/apps/com.github.samfic.szyszka.svg
+    sources:
+      - type: dir
+        path: ..
+      - type: inline
+        contents: |
+          [source."crates-io"]
+          replace-with = "vendored-sources"
+          [source.vendored-sources]
+          directory = "vendor"
+        dest: .cargo
+        dest-filename: config.toml
