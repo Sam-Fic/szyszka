@@ -1,0 +1,88 @@
+name: 📦 Flatpak Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  flatpak:
+    name: Flatpak Bundle
+    runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-50
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install Rust
+        run: |
+          apt-get update && apt-get install -y rustc cargo
+          rustc --version
+
+      - name: Vendor Cargo dependencies
+        run: cargo vendor
+
+      - name: Build Flatpak
+        run: |
+          flatpak-builder --repo=repo build-dir flatpak/com.github.samfic.szyszka.yml --force-clean
+
+      - name: Export Flatpak bundle
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          flatpak build-bundle repo szyszka-${VERSION}.flatpak com.github.samfic.szyszka
+          ls -lh szyszka-*.flatpak
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('data/com.github.samfic.szyszka.metainfo.xml')
+          root = tree.getroot()
+          for release in root.findall('.//release'):
+              if release.get('version') == '$VERSION':
+                  desc = release.find('description')
+                  if desc is not None:
+                      parts = []
+                      for p in desc.findall('.//p'):
+                          if p.text:
+                              parts.append(p.text.strip())
+                      for li in desc.findall('.//li'):
+                          if li.text:
+                              parts.append('- ' + li.text.strip())
+                      print('\n'.join(parts))
+                  break
+          " > /tmp/release-notes.md
+          # Fallback if no notes found
+          if [ ! -s /tmp/release-notes.md ]; then
+            echo "Release v${VERSION}" > /tmp/release-notes.md
+          fi
+          cat /tmp/release-notes.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: szyszka-${{ steps.version.outputs.VERSION }}-flatpak
+          path: szyszka-*.flatpak
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: szyszka-*.flatpak
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
