@@ -27,7 +27,8 @@ jobs:
 
       - name: Install Rust
         run: |
-          apt-get update && apt-get install -y rustc cargo
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.96.1
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           rustc --version
 
       - name: Vendor Cargo dependencies
@@ -55,27 +56,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install GTK dependencies (MSYS2)
+      - name: Install GTK dependencies and Rust (MSYS2)
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
           install: >-
             mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-rust
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-libadwaita
             mingw-w64-x86_64-pkgconf
 
-      - name: Setup rust version
-        run: |
-          rustup default 1.96.1
-          rustup target add x86_64-pc-windows-gnu
-
       - name: Build Release
+        shell: msys2 {0}
         run: |
-          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-          cargo build --release --target x86_64-pc-windows-gnu
-          mv target/x86_64-pc-windows-gnu/release/szyszka.exe windows_szyszka.exe
+          cargo build --release
+          cp target/release/szyszka.exe windows_szyszka.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6

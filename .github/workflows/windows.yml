@@ -11,44 +11,38 @@ env:
 jobs:
   windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install GTK dependencies (MSYS2)
+      - name: Install GTK dependencies and Rust (MSYS2)
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
           install: >-
             mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-rust
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-libadwaita
             mingw-w64-x86_64-pkgconf
 
-      - name: Setup rust version
-        run: |
-          rustup default 1.96.1
-          rustup target add x86_64-pc-windows-gnu
-
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
-          echo "VERS=release" >> $env:GITHUB_ENV
-
-          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-          cargo build --release --target x86_64-pc-windows-gnu
-          mv target/x86_64-pc-windows-gnu/release/szyszka.exe windows_szyszka.exe
+          echo "VERS=release" >> $GITHUB_ENV
+          cargo build --release
+          cp target/release/szyszka.exe windows_szyszka.exe
 
       - name: Build Debug
         if: ${{ github.ref != 'refs/heads/master' }}
         run: |
-          (Get-Content Cargo.toml) -replace '^\[profile\.dev\.package','#[profile.dev.package' -replace '^opt-level = 3 # OPT PACKAGES','#opt-level = 3 # OPT PACKAGES' | Set-Content Cargo.toml
-
-          echo "VERS=debug" >> $env:GITHUB_ENV
-
-          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-          cargo build --profile fastci --target x86_64-pc-windows-gnu
-          mv target/x86_64-pc-windows-gnu/fastci/szyszka.exe windows_szyszka.exe
+          sed -i 's/^\[profile\.dev\.package/#[profile.dev.package/; s/^opt-level = 3 # OPT PACKAGES/#opt-level = 3 # OPT PACKAGES/' Cargo.toml
+          echo "VERS=debug" >> $GITHUB_ENV
+          cargo build --profile fastci
+          cp target/fastci/szyszka.exe windows_szyszka.exe
 
       - name: Store
         uses: actions/upload-artifact@v6
