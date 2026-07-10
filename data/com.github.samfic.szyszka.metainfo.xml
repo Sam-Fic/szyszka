@@ -7,21 +7,25 @@
   <project_license>MIT</project_license>
   <description>
     <p>
-      Szyszka is simple, fast and powerful file renamer, which with help of memory safe Rust
+      Szyszka is a simple, fast and powerful file renamer written in Rust.
+    </p>
+    <p>
+      This is a fork of the original Szyszka by Rafał Mikrut, rewritten with GTK 4 and libadwaita (GNOME HIG compliant).
     </p>
   </description>
   <launchable type="desktop-id">com.github.samfic.szyszka.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://user-images.githubusercontent.com/41945903/126200297-e0552164-2970-449f-9e68-bd47d231e041.png</image>
+      <image>screenshot/image.png</image>
     </screenshot>
   </screenshots>
   <releases>
-    <release version="3.0.0" date="2023-05-23"/>
+    <release version="4.0.0" date="2026-07-10"/>
   </releases>
   <content_rating type="oars-1.0"/>
   <developer_name>Rafał Mikrut, Sam-Fic</developer_name>
   <url type="homepage">https://github.com/Sam-Fic/szyszka</url>
   <url type="bugtracker">https://github.com/Sam-Fic/szyszka/issues</url>
+  <url type="vcs-browser">https://github.com/Sam-Fic/szyszka</url>
   <url type="donation">https://github.com/sponsors/Sam-Fic</url>
 </component>

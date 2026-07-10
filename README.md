@@ -1,5 +1,8 @@
 # Szyszka
 
+> **Fork notice:** This is a fork of [Szyszka](https://github.com/qarmin/szyszka) by **Rafał Mikrut**, rewritten with **GTK 4 and libadwaita** (GNOME HIG compliant).
+> Original author: Rafał Mikrut — original repository: <https://github.com/qarmin/szyszka>. This fork is maintained by [Sam-Fic](https://github.com/Sam-Fic/szyszka).
+
 <div align="center">
   <img src="data/icons/com.github.samfic.szyszka.svg" alt="Szyszka" width="128" height="128">
 </div>
