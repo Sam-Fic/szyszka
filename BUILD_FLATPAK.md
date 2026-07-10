@@ -305,23 +305,45 @@ rm -rf build-dir/ flatpak-repo/ .flatpak-builder/ vendor/
 
 从旧版本构建升级时，注意 `.flatpak-builder/` 缓存可能导致问题。使用 `--force-clean` 可确保完全重新构建。
 
-## 六、快速参考命令
+## 六、AI 执行发布的前几步（本地手动，无脚本封装）
 
-> 以下所有步骤由 AI 自动执行，用户无需手动操作。本地只负责版本元数据与 tag 推送，构建与发布由 `release.yml` CI 自动完成。
+> 本项目**不提供发版脚本**，AI 直接按下列清单逐步执行本地步骤；构建与发布由 `release.yml` CI 自动完成。所有步骤由 AI 自动完成，用户无需手动操作。
 
 ```bash
 # ──────────────────────────────────────
-# 完整发布流程（AI 在本地执行；构建+发布交给 CI）
+# 发布前几步：AI 本地执行；构建+发布交给 CI
 # ──────────────────────────────────────
-# 1. git log 查看上一版本到现在的提交，总结更新内容（写入 metainfo.xml）
-# 2. 编辑 Cargo.toml 更新版本号
-# 3. cargo check 更新 Cargo.lock
-# 4. 编辑 metainfo.xml 在 <releases> 顶部添加 release 条目（version 纯版本号，无 v 前缀）
+# 1. 取上一版本到现在的提交作为 changelog 草稿来源：
+#      LAST=$(git tag -l 'v*' | sort -V | tail -1)
+#      git log ${LAST}..HEAD --pretty=format:'%s'
+#    （无历史 tag 时用 git log --pretty=format:'%s' -20）
+#
+# 2. 【关键】把草稿逐条二次改写成最终发布日志（强制格式，禁止直接照搬 commit 原文）：
+#      · 每条 <li> 使用「简短描述：具体变更」的中英文双语，例如：
+#        <li>批量重命名：支持正则替换文件名 (Batch rename: regex filename substitution)</li>
+#      · 语言需流畅、面向用户，不要出现内部 commit 风格（如 "fix:"、"refactor:"）
+#      · 在 metainfo.xml 的 <releases> 顶部插入 <release> 条目（version 纯版本号，无 v 前缀；date 用今天 YYYY-MM-DD）：
+#        <release version="X.Y.Z" date="YYYY-MM-DD">
+#          <description>
+#            <p>新特性与修复：</p>
+#            <ul>
+#              <li>...</li>
+#            </ul>
+#          </description>
+#        </release>
+#
+# 3. 编辑 Cargo.toml 更新 version = "X.Y.Z"
+# 4. cargo check          # 刷新 Cargo.lock
 # 5. git add Cargo.toml Cargo.lock data/com.github.samfic.szyszka.metainfo.xml
 #    && git commit -m "release: vX.Y.Z" && git tag vX.Y.Z && git push && git push origin vX.Y.Z
 #    → 推送 v* tag 即触发 release.yml：自动三平台构建 + 创建 GitHub Release 上传全部安装包
-# 6. 等待 CI 完成，在 GitHub Releases 页面确认三个产物（.flatpak / .exe / macOS 二进制）均已上传
+# 6. 等待 CI 完成，用 gh run list --workflow release.yml 跟踪，确认三个产物
+#    （.flatpak / .exe / macOS 二进制）均已出现在 GitHub Release
+```
 
+> 💡 第 2 步是重点：自动生成的 commit 列表只是**草稿**，AI 必须二次润色成符合上式的流畅双语日志，再写入 metainfo。release.yml 会从该条目提取 notes，因此 metainfo 里的日志即最终对外发布文案。
+
+```bash
 # ──────────────────────────────────────
 # 仅本地安装验证（快速开发测试，不进入发布）
 # ──────────────────────────────────────
