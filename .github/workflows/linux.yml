@@ -31,6 +31,9 @@ jobs:
       - name: Vendor Cargo dependencies
         run: cargo vendor
 
+      - name: Install Rust SDK extension
+        run: flatpak install -y org.freedesktop.Sdk.Extension.rust-stable//47
+
       - name: Build Flatpak
         run: |
           flatpak-builder --repo=repo build-dir flatpak/com.github.samfic.szyszka.yml --force-clean
