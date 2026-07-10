@@ -9,7 +9,7 @@ description = "Fast, powerful and easy to use file renamer (GTK/Adwaita port)"
 license = "MIT"
 homepage = "https://github.com/Sam-Fic/szyszka"
 repository = "https://github.com/Sam-Fic/szyszka"
-rust-version = "1.92.0"
+rust-version = "1.89"
 build = "build.rs"
 
 [dependencies]
