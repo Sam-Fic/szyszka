@@ -61,26 +61,10 @@ The released zip file contains all dependencies, so it works out of the box on W
 ### Precompiled Binaries
 Available at https://github.com/Sam-Fic/szyszka/releases
 
-### Snap
-https://snapcraft.io/szyszka  
-```
-snap install szyszka
-sudo snap connect szyszka:removable-media # Allows to see files on external devices
-```
-
 ### Flatpak
-TODO
-
-### Cargo/Crates.io
-https://crates.io/crates/szyszka
-```
-cargo install szyszka
-```
-
-### Gentoo Linux
-szyszka is available on Gentoo's GURU overlay
-```
-emerge -av gui-apps/szyszka
+```shell
+flatpak install --user https://github.com/Sam-Fic/szyszka/releases/download/v4.0.0/szyszka-4.0.0.flatpak
+flatpak run com.github.samfic.szyszka
 ```
 
 ### Build from source
