@@ -26,6 +26,12 @@ quality-fix:
     cargo fmt --all
     just quality
 
+# 本地复刻 CI 的 MSRV 闸门:用 Cargo.toml 声明的最低版本显式编译
+msrv:
+    MSRV=$$(grep -m1 '^rust-version' Cargo.toml | sed -E 's/.*"([0-9.]+)".*/\1/'); \
+    rustup toolchain install "$$MSRV" --profile minimal; \
+    cargo +"$$MSRV" build --all-targets --all-features
+
 fix:
     grep -rlZ --include='*.rs' --include='*.slint' --include='*.md' --include='*.ftl' --exclude='AGENTS.md' --exclude='Justfile' '[─–—]' . | xargs -0 -r sed -i 's/[─–—]/-/g' || true
     cargo +nightly fmt

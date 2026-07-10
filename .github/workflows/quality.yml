@@ -37,3 +37,47 @@ jobs:
         run: |
           cargo clippy --all-targets --all-features -- -D warnings
           cargo clippy --all-targets -- -D warnings
+
+  # 强制校验最低支持 Rust 版本(MSRV):从 Cargo.toml 读取 rust-version,
+  # 安装对应工具链并完整编译,确保声明的最低版本确实能编译通过。
+  # 不依赖 Flatpak SDK 扩展的偶然版本,作为独立硬门禁。
+  msrv:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libadwaita-1-dev
+
+      - name: Resolve MSRV from Cargo.toml
+        run: |
+          MSRV=$(grep -m1 '^rust-version' Cargo.toml | sed -E 's/.*"([0-9.]+)".*/\1/')
+          echo "MSRV=$MSRV" >> "$GITHUB_ENV"
+          echo "Declared MSRV: $MSRV"
+
+      - name: Install MSRV toolchain
+        run: rustup toolchain install "$MSRV" --profile minimal
+
+      - name: Build with MSRV (强制校验最低支持版本)
+        run: cargo +"$MSRV" build --all-targets --all-features
+
+  # 前向兼容:用 nightly 编译,及早发现未来 Rust 破坏构建的问题。
+  # 允许失败(continue-on-error),不阻塞合并。
+  nightly:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libadwaita-1-dev
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly --profile minimal
+
+      - name: Build with nightly (前向兼容,允许失败)
+        run: cargo +nightly build --all-targets --all-features
