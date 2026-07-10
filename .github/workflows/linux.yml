@@ -14,8 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libadwaita-1-dev
+
       - name: Setup rust version
-        run: rustup default 1.94.1
+        run: rustup default 1.96.1
 
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' }}

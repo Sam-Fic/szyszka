@@ -14,8 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install GTK dependencies (MSYS2)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gtk4
+            mingw-w64-x86_64-libadwaita
+            mingw-w64-x86_64-pkgconf
+
       - name: Setup rust version
-        run: rustup default 1.94.1
+        run: rustup default 1.96.1
 
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' }}

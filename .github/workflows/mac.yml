@@ -14,8 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install dependencies
+        run: |
+          brew install gtk4 libadwaita pkg-config
+
       - name: Setup rust version
-        run: rustup default 1.94.1
+        run: rustup default 1.96.1
 
       - name: Build Release
         if: ${{ github.ref == 'refs/heads/master' }}
