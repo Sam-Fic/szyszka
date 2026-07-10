@@ -1,4 +1,6 @@
-# Szyszka Flatpak 构建指南
+# Szyszka 发布指南（Release Guide）
+
+> 涵盖版本发布流程（AI 走前几步 + `release.yml` CI 自动构建三平台并发布）以及 Flatpak 构建专项细节。
 
 > 本文档供 AI 编程助手在协助构建和发布版本时参考。
 >
