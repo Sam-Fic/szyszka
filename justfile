@@ -32,6 +32,11 @@ msrv:
     rustup toolchain install "$$MSRV" --profile minimal; \
     cargo +"$$MSRV" build --all-targets --all-features
 
+# 安装 Git pre-push 钩子,使 git push 前自动运行 quality + msrv 硬门禁
+init-hooks:
+    ln -sf "$(pwd)/scripts/pre-push" .git/hooks/pre-push
+    echo "✅ pre-push 钩子已启用: 今后 git push 前会自动运行 quality + msrv 检查"
+
 fix:
     grep -rlZ --include='*.rs' --include='*.slint' --include='*.md' --include='*.ftl' --exclude='AGENTS.md' --exclude='Justfile' '[─–—]' . | xargs -0 -r sed -i 's/[─–—]/-/g' || true
     cargo +nightly fmt

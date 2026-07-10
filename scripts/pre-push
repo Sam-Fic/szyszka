@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Git pre-push 钩子:在 git push 瞬间本地复刻 CI 的硬门禁(quality + msrv),
+# 任一不通过则中止推送,把错误挡在远程之前,避免无谓的云端 CI 失败。
+#
+# 安装(一键): just init-hooks
+# 手动: ln -sf "$(pwd)/scripts/pre-push" .git/hooks/pre-push
+# 临时跳过: git push --no-verify
+#
+# 注意: 仅做 quality + msrv 两条硬门禁; nightly(前向兼容,允许失败) 与
+# Flatpak(需 Docker) 留给云端 CI,不拦截本地推送。
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+run_check() {
+  local name="$1" script="$2"
+  echo "==> [pre-push] $name"
+  if bash "$ROOT/$script"; then
+    echo "✅ $name 通过"
+    return 0
+  else
+    echo "❌ $name 未通过,push 已中止。修复后重试,或用 git push --no-verify 跳过。"
+    return 1
+  fi
+}
+
+if ! run_check "Quality (fmt + clippy)" "scripts/check-quality.sh"; then
+  exit 1
+fi
+
+if ! run_check "MSRV (最低版本编译)" "scripts/check-msrv.sh"; then
+  exit 1
+fi
+
+echo "✅ 本地门禁全部通过,继续推送"
+exit 0
