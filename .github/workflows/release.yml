@@ -13,7 +13,7 @@ jobs:
     name: 📦 Flatpak Bundle
     runs-on: ubuntu-latest
     container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-50
+      image: bilelmoussaoui/flatpak-github-actions:gnome-47
       options: --privileged
 
     steps:
@@ -61,17 +61,21 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
+            mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-gtk4
             mingw-w64-x86_64-libadwaita
             mingw-w64-x86_64-pkgconf
 
       - name: Setup rust version
-        run: rustup default 1.96.1
+        run: |
+          rustup default 1.96.1
+          rustup target add x86_64-pc-windows-gnu
 
       - name: Build Release
         run: |
-          cargo build --release
-          mv target/release/szyszka.exe windows_szyszka.exe
+          $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+          cargo build --release --target x86_64-pc-windows-gnu
+          mv target/x86_64-pc-windows-gnu/release/szyszka.exe windows_szyszka.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
