@@ -38,7 +38,7 @@ jobs:
         run: cargo vendor
 
       - name: Install Rust SDK extension
-        run: flatpak install -y org.freedesktop.Sdk.Extension.rust-stable//47
+        run: flatpak install -y org.freedesktop.Sdk.Extension.rust-stable//24.08
 
       - name: Build Flatpak
         run: |
