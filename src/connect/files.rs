@@ -200,6 +200,7 @@ pub fn move_selected_up(state: &SharedState, store: &gio::ListStore) {
         }
     }
     sync_files(store, state);
+    crate::connect::sync::restore_file_selection(state);
 }
 
 pub fn move_selected_down(state: &SharedState, store: &gio::ListStore) {
@@ -221,4 +222,5 @@ pub fn move_selected_down(state: &SharedState, store: &gio::ListStore) {
         }
     }
     sync_files(store, state);
+    crate::connect::sync::restore_file_selection(state);
 }

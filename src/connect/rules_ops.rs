@@ -113,6 +113,7 @@ pub fn move_rule_up(store: &gio::ListStore, file_store: &gio::ListStore, state: 
     }
     sync_rules(store, state);
     refresh_outdated_or_recompute(file_store, state, gui_state);
+    crate::connect::sync::restore_rule_selection(state);
 }
 
 pub fn move_rule_down(store: &gio::ListStore, file_store: &gio::ListStore, state: &SharedState, gui_state: &SharedGuiState) {
@@ -136,6 +137,7 @@ pub fn move_rule_down(store: &gio::ListStore, file_store: &gio::ListStore, state
     }
     sync_rules(store, state);
     refresh_outdated_or_recompute(file_store, state, gui_state);
+    crate::connect::sync::restore_rule_selection(state);
 }
 
 fn format_captures(regex: &Regex, text: &str) -> String {

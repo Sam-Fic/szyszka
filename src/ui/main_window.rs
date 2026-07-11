@@ -3,9 +3,13 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 
+use std::cmp::Ordering;
+
 use super::models::{FileRow, RuleRow};
 use super::state_ui::{SelectMode, SharedEditorState, SharedGuiState};
 use super::translations_ui::Translations;
+use crate::files::ItemStruct;
+use crate::rule::rules::{rule_place_to_string, rule_type_to_string, SingleRule};
 use crate::state::SharedState;
 
 fn icon_button(label: &str, icon: &str) -> gtk::Button {
@@ -31,32 +35,31 @@ fn header_button(icon: &str, tooltip: &str) -> gtk::Button {
     btn
 }
 
-/// Comparison for the file list, by sort criterion id.
-fn file_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::Ordering {
-    let ra = a.downcast_ref::<FileRow>().unwrap();
-    let rb = b.downcast_ref::<FileRow>().unwrap();
+/// Comparison for the file list, by sort criterion id (operates on the
+/// underlying data so sorting is a one-shot rearrangement that coexists with
+/// manual "move up/down" reordering).
+fn file_item_ordering(id: u32, a: &ItemStruct, b: &ItemStruct) -> Ordering {
     match id {
-        1 => natord::compare(&ra.future_name(), &rb.future_name()),
-        2 => natord::compare(&ra.path(), &rb.path()),
-        3 => rb.is_dir().cmp(&ra.is_dir()).then_with(|| natord::compare(&ra.current_name(), &rb.current_name())),
-        _ => natord::compare(&ra.current_name(), &rb.current_name()),
+        1 => natord::compare(&a.future_name, &b.future_name),
+        2 => natord::compare(&a.path, &b.path),
+        3 => b.is_dir.cmp(&a.is_dir).then_with(|| natord::compare(&a.name, &b.name)),
+        _ => natord::compare(&a.name, &b.name),
     }
 }
 
 /// Comparison for the rule list, by sort criterion id.
-fn rule_sort_ordering(id: u32, a: &glib::Object, b: &glib::Object) -> std::cmp::Ordering {
-    let ra = a.downcast_ref::<RuleRow>().unwrap();
-    let rb = b.downcast_ref::<RuleRow>().unwrap();
+fn rule_item_ordering(id: u32, a: &SingleRule, b: &SingleRule) -> Ordering {
     match id {
-        1 => natord::compare(&ra.usage_text(), &rb.usage_text()),
-        _ => natord::compare(&ra.rule_type_text(), &rb.rule_type_text()),
+        1 => natord::compare(&rule_place_to_string(a.rule_place), &rule_place_to_string(b.rule_place)),
+        _ => natord::compare(&rule_type_to_string(a.rule_type), &rule_type_to_string(b.rule_type)),
     }
 }
 
 /// Build a native "Sort by" control: a `GtkMenuButton` opening a popover with
 /// checkmarked sort criteria and an ascending/descending toggle (Nautilus style).
-/// `make_sorter` receives the criterion id and whether it is ascending.
-fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter: &Rc<dyn Fn(u32, bool) -> gtk::Sorter>) -> gtk::MenuButton {
+/// `apply_sort` receives the criterion id and whether it is ascending, and is
+/// expected to reorder the underlying data once and re-sync the list.
+fn build_sort_menu(labels: &[&str], apply_sort: &Rc<dyn Fn(u32, bool)>) -> gtk::MenuButton {
     let state = Rc::new(std::cell::RefCell::new((0u32, true))); // (criterion id, ascending)
 
     let mb = gtk::MenuButton::new();
@@ -88,14 +91,13 @@ fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter
             cb.set_active(true);
         }
         let st = state.clone();
-        let sm = sort_model.clone();
         let mb_icon = mb.clone();
-        let mk = make_sorter.clone();
+        let ap = apply_sort.clone();
         cb.connect_toggled(move |cb| {
             if cb.is_active() {
                 st.borrow_mut().0 = i as u32;
                 let asc = st.borrow().1;
-                sm.set_sorter(Some(&mk(i as u32, asc)));
+                ap(i as u32, asc);
                 mb_icon.set_icon_name(if asc { "view-sort-ascending-symbolic" } else { "view-sort-descending-symbolic" });
             }
         });
@@ -112,14 +114,13 @@ fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter
     desc_cb.set_hexpand(true);
     {
         let st = state;
-        let sm = sort_model.clone();
         let mb_icon = mb.clone();
-        let mk = make_sorter.clone();
+        let ap = apply_sort.clone();
         desc_cb.connect_toggled(move |cb| {
             let asc = !cb.is_active();
             st.borrow_mut().1 = asc;
             let id = st.borrow().0;
-            sm.set_sorter(Some(&mk(id, asc)));
+            ap(id, asc);
             mb_icon.set_icon_name(if asc { "view-sort-ascending-symbolic" } else { "view-sort-descending-symbolic" });
         });
     }
@@ -128,8 +129,6 @@ fn build_sort_menu(sort_model: &gtk::SortListModel, labels: &[&str], make_sorter
     pop.set_child(Some(&vbox));
     mb.set_popover(Some(&pop));
 
-    // Apply the default sort
-    sort_model.set_sorter(Some(&make_sorter(0, true)));
     mb
 }
 
@@ -322,7 +321,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     main_box.append(&progress_banner);
 
     // ===== Files card =====
-    let (file_list_view, file_store, _file_selection, file_sort_model) = build_file_list_view(&state, &window);
+    let (file_list_view, file_store, _file_selection, _file_sort_model) = build_file_list_view(&state, &window);
 
     let file_scroll = gtk::ScrolledWindow::builder().child(&file_list_view).vexpand(true).build();
 
@@ -428,23 +427,49 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     let move_up_btn = header_button("go-up-symbolic", "Move Up");
     let move_down_btn = header_button("go-down-symbolic", "Move Down");
 
-    // Files sort control (MenuButton + Popover)
-    let file_make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter> = Rc::new(move |id: u32, asc: bool| -> gtk::Sorter {
-        gtk::CustomSorter::new(move |a, b| {
-            let ord = file_sort_ordering(id, a, b);
-            if asc { ord } else { ord.reverse() }.into()
+    // Files sort control (MenuButton + Popover). Sorting rearranges the
+    // underlying data once, so it coexists with manual "move up/down".
+    let apply_file_sort: Rc<dyn Fn(u32, bool)> = {
+        let state = state.clone();
+        let file_store = file_store.clone();
+        Rc::new(move |id: u32, asc: bool| {
+            let sel = state.borrow().file_selection.clone();
+            if let Some(sel) = &sel {
+                crate::connect::sync::sync_selection_from_gtk(sel, &state);
+            }
+            {
+                let mut s = state.borrow_mut();
+                let n = s.files.len();
+                if n == 0 {
+                    return;
+                }
+                s.file_selected.resize(n, false);
+                let mut order: Vec<usize> = (0..n).collect();
+                order.sort_by(|&x, &y| {
+                    let ord = file_item_ordering(id, &s.files[x], &s.files[y]);
+                    if asc {
+                        ord
+                    } else {
+                        ord.reverse()
+                    }
+                });
+                let files: Vec<_> = order.iter().map(|&i| s.files[i].clone()).collect();
+                let selected: Vec<_> = order.iter().map(|&i| s.file_selected[i]).collect();
+                s.files = files;
+                s.file_selected = selected;
+            }
+            crate::connect::sync::sync_files(&file_store, &state);
+            crate::connect::sync::restore_file_selection(&state);
         })
-        .upcast()
-    });
+    };
     let file_sort_btn = build_sort_menu(
-        &file_sort_model,
         &[
             &crate::fls!("sort_name"),
             &crate::fls!("sort_future_name"),
             &crate::fls!("sort_path"),
             &crate::fls!("sort_type"),
         ],
-        &file_make_sorter,
+        &apply_file_sort,
     );
 
     // Files card header
@@ -480,7 +505,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     let rule_store = gio::ListStore::new::<RuleRow>();
     let rule_selection = gtk::MultiSelection::new(Some(rule_store.clone()));
     state.borrow_mut().rule_selection = Some(rule_selection.clone());
-    let (rule_list_view, rule_sort_model) = build_rule_list_view(&rule_selection, &state, &editor_state, &rule_store, &file_store, &gui_state, &window);
+    let (rule_list_view, _rule_sort_model) = build_rule_list_view(&rule_selection, &state, &editor_state, &rule_store, &file_store, &gui_state, &window);
 
     let rule_scroll = gtk::ScrolledWindow::builder().child(&rule_list_view).vexpand(true).build();
 
@@ -508,15 +533,46 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     let rule_up_btn = header_button("go-up-symbolic", "Move Up");
     let rule_down_btn = header_button("go-down-symbolic", "Move Down");
 
-    // Rules sort control (MenuButton + Popover)
-    let rule_make_sorter: Rc<dyn Fn(u32, bool) -> gtk::Sorter> = Rc::new(move |id: u32, asc: bool| -> gtk::Sorter {
-        gtk::CustomSorter::new(move |a, b| {
-            let ord = rule_sort_ordering(id, a, b);
-            (if asc { ord } else { ord.reverse() }).into()
+    // Rules sort control (MenuButton + Popover). One-shot reordering of the
+    // underlying rules so it coexists with manual "move up/down".
+    let apply_rule_sort: Rc<dyn Fn(u32, bool)> = {
+        let state = state.clone();
+        let rule_store = rule_store.clone();
+        let file_store = file_store.clone();
+        let gs = gui_state.clone();
+        Rc::new(move |id: u32, asc: bool| {
+            let sel = state.borrow().rule_selection.clone();
+            if let Some(sel) = &sel {
+                crate::connect::sync::sync_rule_selection_from_gtk(sel, &state);
+            }
+            {
+                let mut s = state.borrow_mut();
+                let n = s.rules.rules.len();
+                if n == 0 {
+                    return;
+                }
+                s.rule_selected.resize(n, false);
+                let mut order: Vec<usize> = (0..n).collect();
+                order.sort_by(|&x, &y| {
+                    let ord = rule_item_ordering(id, &s.rules.rules[x], &s.rules.rules[y]);
+                    if asc {
+                        ord
+                    } else {
+                        ord.reverse()
+                    }
+                });
+                let rules: Vec<_> = order.iter().map(|&i| s.rules.rules[i].clone()).collect();
+                let selected: Vec<_> = order.iter().map(|&i| s.rule_selected[i]).collect();
+                s.rules.rules = rules;
+                s.rule_selected = selected;
+                s.rules.updated = false;
+            }
+            crate::connect::sync::sync_rules(&rule_store, &state);
+            crate::connect::rules_ops::refresh_outdated_or_recompute(&file_store, &state, &gs);
+            crate::connect::sync::restore_rule_selection(&state);
         })
-        .upcast()
-    });
-    let rule_sort_btn = build_sort_menu(&rule_sort_model, &[&crate::fls!("sort_type"), &crate::fls!("sort_usage")], &rule_make_sorter);
+    };
+    let rule_sort_btn = build_sort_menu(&[&crate::fls!("sort_type"), &crate::fls!("sort_usage")], &apply_rule_sort);
 
     // Rules card header
     let rule_status = gtk::Label::new(Some(&crate::fls!("bottom_rule_label_rules")));

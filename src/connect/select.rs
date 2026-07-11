@@ -1,9 +1,9 @@
-use crate::connect::sync::sync_files;
+use crate::connect::sync::restore_file_selection;
 use crate::files::{regex_check, CHARACTER};
 use crate::state::SharedState;
 use crate::ui::state_ui::SelectMode;
 
-pub fn apply_select(store: &gio::ListStore, state: &SharedState, mode: SelectMode) {
+pub fn apply_select(_store: &gio::ListStore, state: &SharedState, mode: SelectMode) {
     {
         let mut state_mut = state.borrow_mut();
         let len = state_mut.files.len();
@@ -52,10 +52,10 @@ pub fn apply_select(store: &gio::ListStore, state: &SharedState, mode: SelectMod
             }
         }
     }
-    sync_files(store, state);
+    restore_file_selection(state);
 }
 
-pub fn apply_select_custom(store: &gio::ListStore, state: &SharedState, pattern: &str, include_dirs: bool, mode_index: i32, select: bool) {
+pub fn apply_select_custom(_store: &gio::ListStore, state: &SharedState, pattern: &str, include_dirs: bool, mode_index: i32, select: bool) {
     {
         let mut state_mut = state.borrow_mut();
         let snapshot: Vec<(String, String, String, bool)> = state_mut.files.iter().map(|f| (f.path.clone(), f.name.clone(), f.future_name.clone(), f.is_dir)).collect();
@@ -88,5 +88,5 @@ pub fn apply_select_custom(store: &gio::ListStore, state: &SharedState, pattern:
             }
         }
     }
-    sync_files(store, state);
+    restore_file_selection(state);
 }

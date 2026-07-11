@@ -98,6 +98,42 @@ pub fn sync_rule_selection_from_gtk(selection: &gtk::MultiSelection, state: &Sha
     state.borrow_mut().rule_selected = selected;
 }
 
+/// Re-apply `state.file_selected` onto the GTK file selection model.
+/// Needed after a `splice` (sync_files), which clears the GTK selection, so a
+/// manual reorder keeps items highlighted and repeated moves keep working.
+/// The file selection wraps a `SortListModel` with no active sorter, so model
+/// positions map 1:1 to the underlying data order.
+pub fn restore_file_selection(state: &SharedState) {
+    use gtk::prelude::SelectionModelExt;
+    let s = state.borrow();
+    let Some(sel) = s.file_selection.as_ref() else { return };
+    let selected = gtk::Bitset::new_empty();
+    let mask = gtk::Bitset::new_empty();
+    for (i, &is_sel) in s.file_selected.iter().enumerate() {
+        mask.add(i as u32);
+        if is_sel {
+            selected.add(i as u32);
+        }
+    }
+    sel.set_selection(&selected, &mask);
+}
+
+/// Re-apply `state.rule_selected` onto the GTK rule selection model.
+pub fn restore_rule_selection(state: &SharedState) {
+    use gtk::prelude::SelectionModelExt;
+    let s = state.borrow();
+    let Some(sel) = s.rule_selection.as_ref() else { return };
+    let selected = gtk::Bitset::new_empty();
+    let mask = gtk::Bitset::new_empty();
+    for (i, &is_sel) in s.rule_selected.iter().enumerate() {
+        mask.add(i as u32);
+        if is_sel {
+            selected.add(i as u32);
+        }
+    }
+    sel.set_selection(&selected, &mask);
+}
+
 pub fn sync_outdated(gui_state: &SharedGuiState, state: &SharedState) {
     gui_state.borrow_mut().results_outdated = !state.borrow().rules.updated;
 }
