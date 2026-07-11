@@ -46,10 +46,9 @@ pub fn start_renaming_request(window: &adw::ApplicationWindow, state: &SharedSta
         dialog.set_response_appearance("proceed", adw::ResponseAppearance::Suggested);
         let window_clone = window.clone();
         let state_clone = state.clone();
-        let gui_clone = gui_state.clone();
         dialog.connect_response(Some("proceed"), move |_, _| {
             let count = state_clone.borrow().files.len() as i32;
-            dialogs::show_confirm_dialog(&window_clone, state_clone.clone(), gui_clone.clone(), count);
+            dialogs::show_confirm_dialog(&window_clone, state_clone.clone(), gui_state.clone(), count);
         });
         dialog.present(Some(window));
     } else {
