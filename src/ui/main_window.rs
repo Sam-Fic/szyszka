@@ -602,7 +602,10 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     main_box.append(&rule_card);
 
     toolbar_view.set_content(Some(&main_box));
-    window.set_content(Some(&toolbar_view));
+
+    let toast_overlay = adw::ToastOverlay::new();
+    toast_overlay.set_child(Some(&toolbar_view));
+    window.set_content(Some(&toast_overlay));
 
     // Add CSS provider to display when realized
     {
@@ -774,7 +777,21 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         let gs = gui_state.clone();
         let file_store_c = file_store.clone();
         edit_rule_btn.connect_clicked(move |_| {
-            let idx = state.borrow().rule_selected.iter().position(|x| *x).map_or(-1, |i| i as i32);
+            let sel = state.borrow().rule_selection.clone();
+            if let Some(sel) = &sel {
+                crate::connect::sync::sync_rule_selection_from_gtk(sel, &state);
+            }
+            let (idx, any_selected) = {
+                let s = state.borrow();
+                let idx = s.rule_selected.iter().position(|x| *x).map_or(-1, |i| i as i32);
+                let any_selected = s.rule_selected.iter().any(|x| *x);
+                (idx, any_selected)
+            };
+            if !any_selected {
+                let toast = adw::Toast::new(&crate::fls!("rule_no_selection"));
+                toast_overlay.add_toast(toast);
+                return;
+            }
             super::rule_editor::show_rule_editor(&window, &es, &state, &rule_store, &file_store_c, &gs, Some(idx));
         });
     }
