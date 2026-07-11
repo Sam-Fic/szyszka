@@ -94,11 +94,7 @@ pub fn show_rule_editor(
     header.set_title_widget(Some(&gtk::Label::new(Some(&crate::fls!("rule_editor_title")))));
     let cancel_btn = gtk::Button::with_label(&crate::fls!("rule_editor_cancel"));
     let is_edit = matches!(edit_index, Some(idx) if idx >= 0);
-    let add_btn_label = if is_edit {
-        crate::fls!("rule_editor_edit")
-    } else {
-        crate::fls!("rule_editor_add")
-    };
+    let add_btn_label = if is_edit { crate::fls!("rule_editor_edit") } else { crate::fls!("rule_editor_add") };
     let add_btn = gtk::Button::with_label(&add_btn_label);
     add_btn.add_css_class("suggested-action");
     header.pack_start(&cancel_btn);
