@@ -584,8 +584,6 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         let pb = progress_banner;
         let file_stack_c = file_stack;
         let rule_stack_c = rule_stack;
-        let w = window.clone();
-        let progress_dialog_cell = std::rc::Rc::new(std::cell::RefCell::new(None::<adw::Dialog>));
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
             let file_count = file_store_c.n_items() as i32;
             let rule_count = rule_store_c.n_items() as i32;
@@ -608,73 +606,12 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
             }
             rule_stack_c.set_visible_child_name(if rule_count > 0 { "list" } else { "empty" });
 
-            // Progress dialog (blocking, determinate)
-            let progress_active = gs.borrow().progress_active;
-            if progress_active {
-                let title = gs.borrow().progress_title.clone();
-                let message = gs.borrow().progress_message.clone();
-                let current = gs.borrow().progress_current;
-                let total = gs.borrow().progress_total;
-                let fraction = if total > 0 { current as f64 / total as f64 } else { 0.0 };
-
-                let mut cell = progress_dialog_cell.borrow_mut();
-                if let Some(ref dlg) = *cell {
-                    // Update existing dialog
-                    if let Some(child) = dlg.first_child() {
-                        if let Some(vbox) = child.downcast_ref::<gtk::Box>() {
-                            if let Some(title_lbl) = vbox.first_child().and_then(|w| w.downcast_ref::<gtk::Label>().cloned()) {
-                                title_lbl.set_label(&title);
-                            }
-                            if let Some(msg_lbl) = vbox.first_child().and_then(|w| w.next_sibling()).and_then(|w| w.downcast_ref::<gtk::Label>().cloned()) {
-                                msg_lbl.set_label(&message);
-                            }
-                            if let Some(bar) = vbox
-                                .first_child()
-                                .and_then(|w| w.next_sibling())
-                                .and_then(|w| w.next_sibling())
-                                .and_then(|w| w.downcast_ref::<gtk::ProgressBar>().cloned())
-                            {
-                                bar.set_fraction(fraction);
-                            }
-                        }
-                    }
-                } else {
-                    // Create new dialog
-                    let dlg = adw::Dialog::builder().title(&title).content_width(400).content_height(160).can_close(false).build();
-
-                    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 8);
-                    vbox.set_margin_top(16);
-                    vbox.set_margin_bottom(16);
-                    vbox.set_margin_start(16);
-                    vbox.set_margin_end(16);
-
-                    let title_lbl = gtk::Label::builder().label(&title).xalign(0.0).build();
-                    title_lbl.add_css_class("heading");
-                    vbox.append(&title_lbl);
-                    let msg_lbl = gtk::Label::builder().label(&message).xalign(0.0).wrap(true).build();
-                    msg_lbl.add_css_class("dim-label");
-                    vbox.append(&msg_lbl);
-                    let bar = gtk::ProgressBar::builder().fraction(fraction).hexpand(true).build();
-                    vbox.append(&bar);
-
-                    dlg.set_child(Some(&vbox));
-                    dlg.present(Some(&w));
-                    *cell = Some(dlg);
-                }
-            } else {
-                let mut cell = progress_dialog_cell.borrow_mut();
-                if let Some(dlg) = cell.take() {
-                    dlg.close();
-                }
-            }
-
             // Banner (indeterminate text messages)
             let title = gs.borrow().message_dialog_title.clone();
             let active = !title.is_empty();
-            let show = active && !progress_active;
-            pb.set_revealed(show);
-            pb.set_visible(show);
-            if show {
+            pb.set_revealed(active);
+            pb.set_visible(active);
+            if active {
                 pb.set_title(&title);
             }
             glib::ControlFlow::Continue
@@ -696,9 +633,8 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     {
         let window = window.clone();
         let state = state.clone();
-        let gs = gui_state.clone();
         start_btn.connect_clicked(move |_| {
-            crate::connect::renaming::start_renaming_request(&window, &state, &gs);
+            crate::connect::renaming::start_renaming_request(&window, &state);
         });
     }
 
