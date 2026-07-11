@@ -83,17 +83,16 @@ button_rule_window_add = إضافة قاعدة
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - اسم الملف
-    $(EXT) - امتداد الطباعة
-    $(MODIF) - تاريخ تعديل الملف
-    $(CREAT) - الطباعة إنشاء الملف
-    $(CURR) - يطبع اسم الملف الحالي مع امتداد
-    $(PARENT) - اسم المجلد الأصلي
-    $(N)/$(K) - أرقام الطباعة (الحجج اختيارية)
-    $(N3:4:5) الطباعة أرقام من 3، مع الخطوة 4
-            و تملئهم بأصفار إلى 5 مواقع.
-            <unk> K بدلاً من ذلك فقط في القائمة، يستخدم أيضًا عنصر الموضع في المجلد.
+label_custom_instruction = $(NAME) - يطبع اسم الملف
+                           $(EXT) - يطبع الامتداد
+                           $(MODIF) - يطبع تاريخ تعديل الملف
+                           $(CREAT) - يطبع تاريخ إنشاء الملف
+                           $(CURR) - يطبع اسم الملف الحالي مع الامتداد
+                           $(PARENT) - يطبع اسم المجلد الأصلي
+                           $(N)/$(K) - يطبع الأرقام (الوسائط اختيارية)
+                           $(N:3:4:5) يطبع الأرقام بدءًا من 3، وبخطوة 4
+                           ويملؤها بالأصفار حتى 5 خانات.
+                           K بدلًا من ذلك موضع القائمة فقط، ويستخدم أيضًا موضع العنصر في المجلد.
 menu_button_load_custom_rule = اختيار قاعدة مخصصة
 button_save_custom_rule = حفظ قاعدة مخصصة
 
@@ -211,3 +210,104 @@ renaming_missing_files = الملفات المفقودة
 renaming_require_missing_files = تحتاج إلى استخدام ملف واحد على الأقل
 renaming_missing_rules = القواعد مفقودة
 renaming_require_missing_rules = تحتاج إلى استخدام قاعدة واحدة على الأقل
+
+
+# --- Missing translations added ---
+ctrl_after_name = بعد الاسم
+ctrl_before_name = قبل الاسم
+ctrl_both = كلاهما
+ctrl_case_insensitive = غير حساس لحالة الأحرف
+ctrl_case_sensitive = حساس لحالة الأحرف
+ctrl_everything = الكل
+ctrl_extension_end = نهاية الامتداد
+ctrl_extension_start = بداية الامتداد
+ctrl_fill_zeros = تعبئة بالأصفار
+ctrl_lowercase = أحرف صغيرة
+ctrl_match_against = المطابقة مع:
+ctrl_name_end = نهاية الاسم
+ctrl_name_start = بداية الاسم
+ctrl_only_extension = الامتداد فقط
+ctrl_only_name = الاسم فقط
+ctrl_partial = جزئي
+ctrl_replace_all = استبدال الكل
+ctrl_start_number = رقم البداية
+ctrl_step = الخطوة
+ctrl_text_to_find = النص المراد البحث عنه
+ctrl_text_to_replace = النص المستبدل
+ctrl_trim_text = النص المراد قصه
+ctrl_uppercase = أحرف كبيرة
+ctrl_use_regex = استخدام التعبير النمطي
+dialog_add_folders_body = تهيئة خيارات المسح
+dialog_add_folders_title = المجلدات المراد تضمينها
+dialog_copy_all_errors = نسخ جميع الأخطاء
+dialog_language_body = اختر لغة التطبيق
+dialog_language_restart = إعادة التشغيل
+dialog_language_restart_confirm = ستتغير اللغة بعد إعادة التشغيل. إعادة التشغيل الآن؟
+dialog_language_title = اللغة
+dialog_loading = جارٍ العمل…
+dialog_move_down = تحريك لأسفل
+dialog_move_up = تحريك لأعلى
+dialog_save_rule_set_body = اختر اسم القواعد (إذا وجد، سيتم استبداله)
+dialog_save_rule_set_name = اسم القاعدة
+dialog_save_rule_set_title = حفظ مجموعة القواعد
+dialog_saved_rule_sets = مجموعات القواعد المحفوظة
+dialog_select = تحديد
+dialog_select_body = اختر إجراءً للتحديد
+dialog_select_custom_body = الاستخدام: */مجلد*/* أو اسم-إصدار-*.txt
+dialog_select_custom_hint = عند تفعيل وضع الدليل/الملف، يتم تجاهل النمط.
+dialog_select_custom_include_dirs = تضمين الأدلة
+dialog_select_custom_match = المطابقة مع:
+dialog_select_custom_pattern = النمط
+dialog_select_custom_title = تحديد / إلغاء تحديد مخصص
+empty_state_files_description = أضف ملفات أو مجلدات لبدء إعادة التسمية
+empty_state_files_title = لا توجد ملفات محملة
+empty_state_rules_description = أضف قاعدة لتحديد كيفية إعادة تسمية الملفات
+empty_state_rules_title = لا توجد قواعد مهيأة
+menu_about = حول
+menu_appearance = المظهر
+menu_dark_theme = السمة الداكنة
+menu_language = اللغة…
+menu_light_theme = السمة الفاتحة
+menu_open_config_dir = فتح مجلد الإعدادات
+menu_open_custom_texts_file = فتح ملف النصوص المخصصة
+menu_open_log_folder = فتح مجلد السجلات
+menu_open_rules_file = فتح ملف إعدادات القواعد
+menu_preferences = التفضيلات
+menu_title = القائمة
+rule_editor_add = إضافة قاعدة
+rule_editor_cancel = إلغاء
+rule_editor_custom_save = حفظ قاعدة مخصصة
+rule_editor_custom_saved = النصوص المخصصة المحفوظة:
+rule_editor_delete = حذف
+rule_editor_edit = تحرير القاعدة
+rule_editor_example = مثال
+rule_editor_example_after = بعد:
+rule_editor_example_before = قبل:
+rule_editor_load = تحميل
+rule_editor_reset = إعادة تعيين إلى الافتراضي
+rule_editor_title = محرر القواعد
+rule_editor_tool_type = نوع الأداة:
+rule_editor_usage_type = نوع الاستخدام:
+rule_no_selection = لم يتم تحديد قاعدة. حدد قاعدة لتحريرها.
+select_custom_hint = عند تفعيل وضع الدليل/الملف، يتم تجاهل النمط.
+settings_theme = السمة
+settings_theme_dark = داكن
+settings_theme_light = فاتح
+settings_theme_system = النظام
+sort_by = ترتيب حسب
+sort_descending = تنازلي
+sort_future_name = الاسم الجديد
+sort_name = الاسم
+sort_path = المسار
+sort_type = النوع
+sort_usage = الاستخدام
+status_up_to_date = محدّث
+status_update_required = التحديث مطلوب
+tab_add_number = إضافة رقم
+tab_add_text = إضافة نص
+tab_case_size = الحروف الكبيرة/الصغيرة
+tab_custom = مخصص
+tab_normalize = تطبيع الاسم
+tab_purge = تنظيف
+tab_replace = استبدال
+tab_trim = قص

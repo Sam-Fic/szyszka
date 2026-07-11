@@ -83,17 +83,16 @@ button_rule_window_add = Přidat pravidlo
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - vytiskne název souboru
-    $(EXT) - vytiskne příponu
-    $(MODIF) - vytiskne datum úpravy souboru
-    $(CREAT) - vytiskne vytvoření souboru
-    $(CURR) - vytiskne aktuální název souboru s příponou
-    $(PARENT) - vytiskne název nadřazené složky
-    $(N)/$(K) - vytiskne čísla (argumenty jsou volitelné)
-    $(N:3:4:5) vytiskne čísla od 3, s kroku 4
-            a vyplní je nulami na 5 pozic.
-            K místo pouze pozice v seznamu, také používá položku pozice ve složce.
+label_custom_instruction = $(NAME) - vytiskne název souboru
+                           $(EXT) - vytiskne příponu
+                           $(MODIF) - vytiskne datum úpravy souboru
+                           $(CREAT) - vytiskne datum vytvoření souboru
+                           $(CURR) - vytiskne aktuální název souboru s příponou
+                           $(PARENT) - vytiskne název nadřazené složky
+                           $(N)/$(K) - vytiskne čísla (argumenty jsou volitelné)
+                           $(N:3:4:5) vytiskne čísla od 3, s krokem 4
+                           a doplní je nulami na 5 pozic.
+                           K místo toho pouze pozici v seznamu, použije také pozici položky ve složce.
 menu_button_load_custom_rule = Vlastní výběr pravidel
 button_save_custom_rule = Uložit vlastní pravidlo
 
@@ -211,3 +210,104 @@ renaming_missing_files = Chybějící soubory
 renaming_require_missing_files = Musíte použít alespoň 1 soubor
 renaming_missing_rules = Chybějící pravidla
 renaming_require_missing_rules = Musíte použít alespoň jedno pravidlo
+
+
+# --- Missing translations added ---
+ctrl_after_name = Za názvem
+ctrl_before_name = Před názvem
+ctrl_both = Obojí
+ctrl_case_insensitive = Nerozlišovat velikost písmen
+ctrl_case_sensitive = Rozlišovat velikost písmen
+ctrl_everything = Vše
+ctrl_extension_end = Konec přípony
+ctrl_extension_start = Začátek přípony
+ctrl_fill_zeros = Vyplnit nulami
+ctrl_lowercase = Malá písmena
+ctrl_match_against = Porovnat s:
+ctrl_name_end = Konec názvu
+ctrl_name_start = Začátek názvu
+ctrl_only_extension = Pouze přípona
+ctrl_only_name = Pouze název
+ctrl_partial = Částečně
+ctrl_replace_all = Nahradit vše
+ctrl_start_number = Počáteční číslo
+ctrl_step = Krok
+ctrl_text_to_find = Text k nalezení
+ctrl_text_to_replace = Nahrazený text
+ctrl_trim_text = Text k oříznutí
+ctrl_uppercase = Velká písmena
+ctrl_use_regex = Použít regex
+dialog_add_folders_body = Nakonfigurovat možnosti skenování
+dialog_add_folders_title = Složky k zahrnutí
+dialog_copy_all_errors = Kopírovat všechny chyby
+dialog_language_body = Vyberte jazyk aplikace
+dialog_language_restart = Restartovat
+dialog_language_restart_confirm = Jazyk se změní po restartu. Restartovat nyní?
+dialog_language_title = Jazyk
+dialog_loading = Pracuji…
+dialog_move_down = Přesunout dolů
+dialog_move_up = Přesunout nahoru
+dialog_save_rule_set_body = Zvolte název pravidel (pokud existuje, bude přepsán)
+dialog_save_rule_set_name = Název pravidla
+dialog_save_rule_set_title = Uložit sadu pravidel
+dialog_saved_rule_sets = Uložené sady pravidel
+dialog_select = Vybrat
+dialog_select_body = Zvolte akci výběru
+dialog_select_custom_body = Použití: */složka*/* nebo název-verze-*.txt
+dialog_select_custom_hint = Když je aktivní režim Adresář/Soubor, vzor je ignorován.
+dialog_select_custom_include_dirs = Zahrnutí adresářů
+dialog_select_custom_match = Porovnat s:
+dialog_select_custom_pattern = Vzor
+dialog_select_custom_title = Vybrat / Zrušit výběr vlastní
+empty_state_files_description = Přidejte soubory nebo složky a začněte přejmenovávat
+empty_state_files_title = Nebyly načteny žádné soubory
+empty_state_rules_description = Přidejte pravidlo, které určí, jak se mají soubory přejmenovat
+empty_state_rules_title = Nejsou nakonfigurována žádná pravidla
+menu_about = O aplikaci
+menu_appearance = Vzhled
+menu_dark_theme = Tmavý motiv
+menu_language = Jazyk…
+menu_light_theme = Světlý motiv
+menu_open_config_dir = Otevřít složku konfigurace
+menu_open_custom_texts_file = Otevřít soubor vlastních textů
+menu_open_log_folder = Otevřít složku protokolů
+menu_open_rules_file = Otevřít soubor nastavení pravidel
+menu_preferences = Předvolby
+menu_title = Nabídka
+rule_editor_add = Přidat pravidlo
+rule_editor_cancel = Zrušit
+rule_editor_custom_save = Uložit vlastní pravidlo
+rule_editor_custom_saved = Uložené vlastní texty:
+rule_editor_delete = Smazat
+rule_editor_edit = Upravit pravidlo
+rule_editor_example = PŘÍKLAD
+rule_editor_example_after = Po:
+rule_editor_example_before = Před:
+rule_editor_load = Načíst
+rule_editor_reset = Obnovit výchozí
+rule_editor_title = Editor pravidel
+rule_editor_tool_type = Typ nástroje:
+rule_editor_usage_type = Typ použití:
+rule_no_selection = Není vybráno žádné pravidlo. Vyberte pravidlo k úpravě.
+select_custom_hint = Když je aktivní režim Adresář/Soubor, vzor je ignorován.
+settings_theme = Motiv
+settings_theme_dark = Tmavý
+settings_theme_light = Světlý
+settings_theme_system = Systémový
+sort_by = Seřadit podle
+sort_descending = Sestupně
+sort_future_name = Nový název
+sort_name = Název
+sort_path = Cesta
+sort_type = Typ
+sort_usage = Použití
+status_up_to_date = aktuální
+status_update_required = VYŽADUJE SE AKTUALIZACE
+tab_add_number = Přidat číslo
+tab_add_text = Přidat text
+tab_case_size = Velká/Malá písmena
+tab_custom = Vlastní
+tab_normalize = Normalizovat název
+tab_purge = Vyčistit
+tab_replace = Nahradit
+tab_trim = Oříznout

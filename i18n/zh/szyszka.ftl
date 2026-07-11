@@ -104,16 +104,16 @@ label_example_text_after = 修改后：
 button_rule_window_add = 添加规则
 
 ## Custom
-label_custom_instruction =
-    $(NAME) - 文件名
-    $(EXT) - 扩展名
-    $(MODIF) - 修改日期
-    $(CREAT) - 创建日期
-    $(CURR) - 当前文件名（含扩展名）
-    $(PARENT) - 父文件夹名称
-    $(N)/$(K) - 数字（参数可选）
-    $(N:3:4:5) 从 3 开始，步长为 4，填充零至 5 位。
-              K 为文件夹内的位置编号。
+label_custom_instruction = $(NAME) - 打印文件名
+                           $(EXT) - 打印扩展名
+                           $(MODIF) - 打印文件修改日期
+                           $(CREAT) - 打印文件创建日期
+                           $(CURR) - 打印带扩展名的当前文件名
+                           $(PARENT) - 打印父文件夹名称
+                           $(N)/$(K) - 打印数字（参数为可选）
+                           $(N:3:4:5) 从 3 开始打印数字，步长为 4
+                           并用零填充到 5 位。
+                           K 则仅打印列表中的位置，也使用文件夹中项目的所在位置。
 
 menu_button_load_custom_rule = 加载自定义规则
 button_save_custom_rule = 保存自定义规则

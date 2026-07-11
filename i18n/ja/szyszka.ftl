@@ -83,17 +83,16 @@ button_rule_window_add = ルールの追加
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - prints file name
-    $(EXT) - prints extension
-    $(MODIF) - prints file modification date
-    $(CREAT) - prints file creation
-    $(CURR) - prints current file name with extension
-    $(PARENT) - prints parent folder name
-    $(N)/$(K) - prints numbers(arguments are optional)
-    $(N:3:4:5) prints numbers from 3, with step 4
-            and fills them with zeros to 5 positions.
-            K instead only position in list, also uses position item in folder.
+label_custom_instruction = $(NAME) - ファイル名を出力
+                           $(EXT) - 拡張子を出力
+                           $(MODIF) - ファイルの更新日を出力
+                           $(CREAT) - ファイルの作成日を出力
+                           $(CURR) - 拡張子付きの現在のファイル名を出力
+                           $(PARENT) - 親フォルダ名を出力
+                           $(N)/$(K) - 数字を出力（引数は省略可）
+                           $(N:3:4:5) 3から始まる数字を、ステップ4で出力し
+                           5桁になるようゼロで埋めます。
+                           Kは代わりにリスト内の位置のみを出力し、フォルダ内のアイテムの位置も使用します。
 menu_button_load_custom_rule = カスタムルール選択
 button_save_custom_rule = カスタムルールを保存
 
@@ -211,3 +210,104 @@ renaming_missing_files = 不足しているファイル
 renaming_require_missing_files = 少なくとも 1 つのファイルを使用する必要があります。
 renaming_missing_rules = ルールがありません
 renaming_require_missing_rules = 少なくとも1つのルールを使用する必要があります
+
+
+# --- Missing translations added ---
+ctrl_after_name = 名前の後
+ctrl_before_name = 名前の前
+ctrl_both = 両方
+ctrl_case_insensitive = 大文字と小文字を区別しない
+ctrl_case_sensitive = 大文字と小文字を区別する
+ctrl_everything = すべて
+ctrl_extension_end = 拡張子の末尾
+ctrl_extension_start = 拡張子の先頭
+ctrl_fill_zeros = ゼロで埋める
+ctrl_lowercase = 小文字
+ctrl_match_against = 次と照合:
+ctrl_name_end = 名前の末尾
+ctrl_name_start = 名前の先頭
+ctrl_only_extension = 拡張子のみ
+ctrl_only_name = 名前のみ
+ctrl_partial = 部分的
+ctrl_replace_all = すべて置換
+ctrl_start_number = 開始番号
+ctrl_step = ステップ
+ctrl_text_to_find = 検索するテキスト
+ctrl_text_to_replace = 置換後のテキスト
+ctrl_trim_text = 切り取るテキスト
+ctrl_uppercase = 大文字
+ctrl_use_regex = 正規表現を使用
+dialog_add_folders_body = スキャンオプションを設定
+dialog_add_folders_title = 含めるフォルダ
+dialog_copy_all_errors = すべてのエラーをコピー
+dialog_language_body = アプリケーションの言語を選択
+dialog_language_restart = 再起動
+dialog_language_restart_confirm = 言語は再起動後に変更されます。今すぐ再起動しますか？
+dialog_language_title = 言語
+dialog_loading = 処理中…
+dialog_move_down = 下に移動
+dialog_move_up = 上に移動
+dialog_save_rule_set_body = ルールの名前を選択（存在する場合は上書きされます）
+dialog_save_rule_set_name = ルール名
+dialog_save_rule_set_title = ルールセットを保存
+dialog_saved_rule_sets = 保存済みルールセット
+dialog_select = 選択
+dialog_select_body = 選択アクションを選ぶ
+dialog_select_custom_body = 使い方: */フォルダ*/* または 名前-バージョン-*.txt
+dialog_select_custom_hint = ディレクトリ/ファイルモードが有効な場合、パターンは無視されます。
+dialog_select_custom_include_dirs = ディレクトリを含める
+dialog_select_custom_match = 次と照合:
+dialog_select_custom_pattern = パターン
+dialog_select_custom_title = 選択/選択解除（カスタム）
+empty_state_files_description = 名前を変更するにはファイルまたはフォルダを追加してください
+empty_state_files_title = ファイルが読み込まれていません
+empty_state_rules_description = ファイルの名前変更方法を定義するルールを追加してください
+empty_state_rules_title = ルールが設定されていません
+menu_about = 情報
+menu_appearance = 外観
+menu_dark_theme = ダークテーマ
+menu_language = 言語…
+menu_light_theme = ライトテーマ
+menu_open_config_dir = 設定ディレクトリを開く
+menu_open_custom_texts_file = カスタムテキストファイルを開く
+menu_open_log_folder = ログフォルダを開く
+menu_open_rules_file = ルール設定ファイルを開く
+menu_preferences = 設定
+menu_title = メニュー
+rule_editor_add = ルールを追加
+rule_editor_cancel = キャンセル
+rule_editor_custom_save = カスタムルールを保存
+rule_editor_custom_saved = 保存済みカスタムテキスト:
+rule_editor_delete = 削除
+rule_editor_edit = ルールを編集
+rule_editor_example = 例
+rule_editor_example_after = 後:
+rule_editor_example_before = 前:
+rule_editor_load = 読み込み
+rule_editor_reset = デフォルトにリセット
+rule_editor_title = ルールエディタ
+rule_editor_tool_type = ツールの種類:
+rule_editor_usage_type = 使用法の種類:
+rule_no_selection = ルールが選択されていません。編集するルールを選択してください。
+select_custom_hint = ディレクトリ/ファイルモードが有効な場合、パターンは無視されます。
+settings_theme = テーマ
+settings_theme_dark = ダーク
+settings_theme_light = ライト
+settings_theme_system = システム
+sort_by = 並べ替え
+sort_descending = 降順
+sort_future_name = 新しい名前
+sort_name = 名前
+sort_path = パス
+sort_type = 種類
+sort_usage = 使用法
+status_up_to_date = 最新
+status_update_required = 更新が必要
+tab_add_number = 番号を追加
+tab_add_text = テキストを追加
+tab_case_size = 大文字/小文字
+tab_custom = カスタム
+tab_normalize = 名前を正規化
+tab_purge = 削除
+tab_replace = 置換
+tab_trim = 切り取り

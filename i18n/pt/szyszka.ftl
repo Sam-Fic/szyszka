@@ -83,17 +83,16 @@ button_rule_window_add = Adicionar Regra
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - imprime o nome do arquivo
-    $(EXT) - imprime extensão
-    $(MODIF) - data de modificação do arquivo
-    $(CREAT) - imprime a data de modificação do arquivo
-    $(CURR) - imprime o nome do arquivo atual com a extensão
-    $(PARENT) - imprime o nome da pasta pai
-    $(N)/$(K) - imprime números (argumentos são opcionais)
-    $(N:3:4:5) imprime números a partir de 3, com o passo 4
-            e preenche-os com zeros a 5 posições.
-            K em vez disso, apenas posiciona na lista, também usa a posição de item na pasta.
+label_custom_instruction = $(NAME) - imprime o nome do arquivo
+                           $(EXT) - imprime a extensão
+                           $(MODIF) - imprime a data de modificação do arquivo
+                           $(CREAT) - imprime a data de criação do arquivo
+                           $(CURR) - imprime o nome atual do arquivo com a extensão
+                           $(PARENT) - imprime o nome da pasta pai
+                           $(N)/$(K) - imprime números (os argumentos são opcionais)
+                           $(N:3:4:5) imprime números a partir de 3, com passo 4
+                           e os preenche com zeros até 5 posições.
+                           K em vez disso apenas a posição na lista, também usa a posição do item na pasta.
 menu_button_load_custom_rule = Seletor de regra personalizado
 button_save_custom_rule = Salvar Regra Customizada
 
@@ -211,3 +210,104 @@ renaming_missing_files = Ficheiros em falta
 renaming_require_missing_files = Você precisa usar pelo menos 1 arquivo
 renaming_missing_rules = Faltando Regras
 renaming_require_missing_rules = Você precisa usar pelo menos 1 regra
+
+
+# --- Missing translations added ---
+ctrl_after_name = Após o nome
+ctrl_before_name = Antes do nome
+ctrl_both = Ambos
+ctrl_case_insensitive = Ignorar maiúsculas/minúsculas
+ctrl_case_sensitive = Diferenciar maiúsculas/minúsculas
+ctrl_everything = Tudo
+ctrl_extension_end = Fim da extensão
+ctrl_extension_start = Início da extensão
+ctrl_fill_zeros = Preencher com zeros
+ctrl_lowercase = Minúsculas
+ctrl_match_against = Correspondência com:
+ctrl_name_end = Fim do nome
+ctrl_name_start = Início do nome
+ctrl_only_extension = Apenas extensão
+ctrl_only_name = Apenas nome
+ctrl_partial = Parcial
+ctrl_replace_all = Substituir tudo
+ctrl_start_number = Número inicial
+ctrl_step = Passo
+ctrl_text_to_find = Texto a encontrar
+ctrl_text_to_replace = Texto substituído
+ctrl_trim_text = Texto a recortar
+ctrl_uppercase = Maiúsculas
+ctrl_use_regex = Usar regex
+dialog_add_folders_body = Configurar opções de varredura
+dialog_add_folders_title = Pastas a incluir
+dialog_copy_all_errors = Copiar todos os erros
+dialog_language_body = Selecionar idioma do aplicativo
+dialog_language_restart = Reiniciar
+dialog_language_restart_confirm = O idioma mudará após reiniciar. Reiniciar agora?
+dialog_language_title = Idioma
+dialog_loading = Trabalhando…
+dialog_move_down = Mover para baixo
+dialog_move_up = Mover para cima
+dialog_save_rule_set_body = Escolha o nome das regras (se existir, será substituído)
+dialog_save_rule_set_name = Nome da regra
+dialog_save_rule_set_title = Salvar conjunto de regras
+dialog_saved_rule_sets = Conjuntos de regras salvos
+dialog_select = Selecionar
+dialog_select_body = Escolha uma ação de seleção
+dialog_select_custom_body = Uso: */pasta*/* ou nome-versão-*.txt
+dialog_select_custom_hint = Quando o modo Diretório/Arquivo está ativo, o padrão é ignorado.
+dialog_select_custom_include_dirs = Incluir diretórios
+dialog_select_custom_match = Correspondência com:
+dialog_select_custom_pattern = Padrão
+dialog_select_custom_title = Selecionar / Desselecionar personalizado
+empty_state_files_description = Adicione arquivos ou pastas para começar a renomear
+empty_state_files_title = Nenhum arquivo carregado
+empty_state_rules_description = Adicione uma regra para definir como os arquivos devem ser renomeados
+empty_state_rules_title = Nenhuma regra configurada
+menu_about = Sobre
+menu_appearance = Aparência
+menu_dark_theme = Tema escuro
+menu_language = Idioma…
+menu_light_theme = Tema claro
+menu_open_config_dir = Abrir pasta de configuração
+menu_open_custom_texts_file = Abrir arquivo de textos personalizados
+menu_open_log_folder = Abrir pasta de log
+menu_open_rules_file = Abrir arquivo de configurações de regras
+menu_preferences = Preferências
+menu_title = Menu
+rule_editor_add = Adicionar regra
+rule_editor_cancel = Cancelar
+rule_editor_custom_save = Salvar regra personalizada
+rule_editor_custom_saved = Textos personalizados salvos:
+rule_editor_delete = Excluir
+rule_editor_edit = Editar regra
+rule_editor_example = EXEMPLO
+rule_editor_example_after = Depois:
+rule_editor_example_before = Antes:
+rule_editor_load = Carregar
+rule_editor_reset = Restaurar padrão
+rule_editor_title = Editor de regras
+rule_editor_tool_type = Tipo de ferramenta:
+rule_editor_usage_type = Tipo de uso:
+rule_no_selection = Nenhuma regra selecionada. Selecione uma regra para editar.
+select_custom_hint = Quando o modo Diretório/Arquivo está ativo, o padrão é ignorado.
+settings_theme = Tema
+settings_theme_dark = Escuro
+settings_theme_light = Claro
+settings_theme_system = Sistema
+sort_by = Ordenar por
+sort_descending = Decrescente
+sort_future_name = Novo nome
+sort_name = Nome
+sort_path = Caminho
+sort_type = Tipo
+sort_usage = Uso
+status_up_to_date = atualizado
+status_update_required = ATUALIZAÇÃO REQUERIDA
+tab_add_number = Adicionar número
+tab_add_text = Adicionar texto
+tab_case_size = Maiúsculas/Minúsculas
+tab_custom = Personalizado
+tab_normalize = Normalizar nome
+tab_purge = Remover
+tab_replace = Substituir
+tab_trim = Recortar

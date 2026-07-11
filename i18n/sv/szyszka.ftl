@@ -83,17 +83,16 @@ button_rule_window_add = Regel Lägg till
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - utskrifter filnamn
-    $(EXT) - utskrifter tillägg
-    $(MODIF) - utskrifter fil ändringsdatum
-    $(CREAT) - utskrifter fil skapande
-    $(CURR) - skriver ut nuvarande filnamn med tillägg
-    $(PARENT) - utskrifter förälder mappnamn
-    $(N)/$(K) - utskrifter siffror (argument är frivilliga)
-    $(N:3:4:5) utskrifter nummer från 3, med steg 4
-            och fyller dem med nollor till 5 positioner.
-            <unk> K istället bara position i listan, använder även positionsobjekt i mappen.
+label_custom_instruction = $(NAME) - skriver ut filnamnet
+                           $(EXT) - skriver ut tillägget
+                           $(MODIF) - skriver ut filens ändringsdatum
+                           $(CREAT) - skriver ut filens skapandedatum
+                           $(CURR) - skriver ut det aktuella filnamnet med tillägg
+                           $(PARENT) - skriver ut namnet på den överordnade mappen
+                           $(N)/$(K) - skriver ut nummer (argumenten är valfria)
+                           $(N:3:4:5) skriver ut nummer från 3, med steg 4
+                           och fyller dem med nollor till 5 positioner.
+                           K skriver istället bara ut positionen i listan, använder också positionen för objektet i mappen.
 menu_button_load_custom_rule = Anpassad regel väljare
 button_save_custom_rule = Spara anpassad regel
 
@@ -211,3 +210,104 @@ renaming_missing_files = Saknade filer
 renaming_require_missing_files = Du måste använda minst 1 fil
 renaming_missing_rules = Saknade regler
 renaming_require_missing_rules = Du måste använda minst 1 regel
+
+
+# --- Missing translations added ---
+ctrl_after_name = Efter namnet
+ctrl_before_name = Före namnet
+ctrl_both = Båda
+ctrl_case_insensitive = Skiftlägesokänslig
+ctrl_case_sensitive = Skiftlägeskänslig
+ctrl_everything = Allt
+ctrl_extension_end = Slutet av tillägget
+ctrl_extension_start = Början av tillägget
+ctrl_fill_zeros = Fyll med nollor
+ctrl_lowercase = Gemener
+ctrl_match_against = Matcha mot:
+ctrl_name_end = Slutet av namnet
+ctrl_name_start = Början av namnet
+ctrl_only_extension = Endast tillägg
+ctrl_only_name = Endast namn
+ctrl_partial = Delvis
+ctrl_replace_all = Ersätt alla
+ctrl_start_number = Startnummer
+ctrl_step = Steg
+ctrl_text_to_find = Text att söka
+ctrl_text_to_replace = Ersatt text
+ctrl_trim_text = Text att trimma
+ctrl_uppercase = Versaler
+ctrl_use_regex = Använd regex
+dialog_add_folders_body = Konfigurera skanningsalternativ
+dialog_add_folders_title = Mappar att inkludera
+dialog_copy_all_errors = Kopiera alla fel
+dialog_language_body = Välj programspråk
+dialog_language_restart = Starta om
+dialog_language_restart_confirm = Språket ändras efter omstart. Starta om nu?
+dialog_language_title = Språk
+dialog_loading = Arbetar…
+dialog_move_down = Flytta ner
+dialog_move_up = Flytta upp
+dialog_save_rule_set_body = Välj namn på regler (om det finns skrivs det över)
+dialog_save_rule_set_name = Regelnamn
+dialog_save_rule_set_title = Spara regeluppsättning
+dialog_saved_rule_sets = Sparade regeluppsättningar
+dialog_select = Välj
+dialog_select_body = Välj en markeringsåtgärd
+dialog_select_custom_body = Användning: */mapp*/* eller namn-version-*.txt
+dialog_select_custom_hint = När Katalog/Fil-läget är aktivt ignoreras mönstret.
+dialog_select_custom_include_dirs = Inkludera kataloger
+dialog_select_custom_match = Matcha mot:
+dialog_select_custom_pattern = Mönster
+dialog_select_custom_title = Välj / Avmarkera anpassad
+empty_state_files_description = Lägg till filer eller mappar för att börja byta namn
+empty_state_files_title = Inga filer inlästa
+empty_state_rules_description = Lägg till en regel för att definiera hur filer ska bytas namn
+empty_state_rules_title = Inga regler konfigurerade
+menu_about = Om
+menu_appearance = Utseende
+menu_dark_theme = Mörkt tema
+menu_language = Språk…
+menu_light_theme = Ljust tema
+menu_open_config_dir = Öppna konfigurationsmapp
+menu_open_custom_texts_file = Öppna fil med anpassade texter
+menu_open_log_folder = Öppna loggmapp
+menu_open_rules_file = Öppna regelinställningsfil
+menu_preferences = Inställningar
+menu_title = Meny
+rule_editor_add = Lägg till regel
+rule_editor_cancel = Avbryt
+rule_editor_custom_save = Spara anpassad regel
+rule_editor_custom_saved = Sparade anpassade texter:
+rule_editor_delete = Ta bort
+rule_editor_edit = Redigera regel
+rule_editor_example = EXEMPEL
+rule_editor_example_after = Efter:
+rule_editor_example_before = Före:
+rule_editor_load = Läs in
+rule_editor_reset = Återställ till standard
+rule_editor_title = Regelredigerare
+rule_editor_tool_type = Verktygstyp:
+rule_editor_usage_type = Användningstyp:
+rule_no_selection = Ingen regel vald. Välj en regel att redigera.
+select_custom_hint = När Katalog/Fil-läget är aktivt ignoreras mönstret.
+settings_theme = Tema
+settings_theme_dark = Mörkt
+settings_theme_light = Ljust
+settings_theme_system = System
+sort_by = Sortera efter
+sort_descending = Fallande
+sort_future_name = Nytt namn
+sort_name = Namn
+sort_path = Sökväg
+sort_type = Typ
+sort_usage = Användning
+status_up_to_date = uppdaterad
+status_update_required = UPPDATERING KRÄVS
+tab_add_number = Lägg till nummer
+tab_add_text = Lägg till text
+tab_case_size = Versaler/Gemener
+tab_custom = Anpassad
+tab_normalize = Normalisera namn
+tab_purge = Rensa
+tab_replace = Ersätt
+tab_trim = Trimma

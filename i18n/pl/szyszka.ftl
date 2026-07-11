@@ -83,17 +83,16 @@ button_rule_window_add = Dodaj regułę
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - dodaje nazwę pliku
-    $(EXT) - dodaje rozszerzenie
-    $(MODIF) - dodaje datę modyfikacji pliku
-    $(CREAT) - dodaje datę utworzenie pliku
-    $(CURR) - dodaje bieżącą nazwę pliku z rozszerzeniem
-    $(PARENT) - dodaje nazwę folderu nadrzędnego
-    $(N)/$(K) - dodaje numery (argumenty są opcjonalne)
-    $(N:3:4:5) dodaje numery od 3, z krokiem 4
-            i wypełnia je zerami do 5 pozycji.
-            K zamiast pozycji na liście, używa pozycji w folderze.
+label_custom_instruction = $(NAME) - drukuje nazwę pliku
+                           $(EXT) - drukuje rozszerzenie
+                           $(MODIF) - drukuje datę modyfikacji pliku
+                           $(CREAT) - drukuje datę utworzenia pliku
+                           $(CURR) - drukuje bieżącą nazwę pliku z rozszerzeniem
+                           $(PARENT) - drukuje nazwę folderu nadrzędnego
+                           $(N)/$(K) - drukuje liczby (argumenty są opcjonalne)
+                           $(N:3:4:5) drukuje liczby od 3, z krokiem 4
+                           i wypełnia je zerami do 5 pozycji.
+                           K zamiast tego tylko pozycję na liście, używa też pozycji elementu w folderze.
 menu_button_load_custom_rule = Wybierz zapisane reguły
 button_save_custom_rule = Zapisz własną regułę
 
@@ -211,3 +210,104 @@ renaming_missing_files = Brakujące pliki
 renaming_require_missing_files = Musisz użyć co najmniej 1 pliku
 renaming_missing_rules = Brakujące reguły
 renaming_require_missing_rules = Musisz użyć co najmniej 1 reguły
+
+
+# --- Missing translations added ---
+ctrl_after_name = Po nazwie
+ctrl_before_name = Przed nazwą
+ctrl_both = Oba
+ctrl_case_insensitive = Bez rozróżniania wielkości liter
+ctrl_case_sensitive = Rozróżniaj wielkość liter
+ctrl_everything = Wszystko
+ctrl_extension_end = Koniec rozszerzenia
+ctrl_extension_start = Początek rozszerzenia
+ctrl_fill_zeros = Wypełnij zerami
+ctrl_lowercase = Małe litery
+ctrl_match_against = Dopasuj do:
+ctrl_name_end = Koniec nazwy
+ctrl_name_start = Początek nazwy
+ctrl_only_extension = Tylko rozszerzenie
+ctrl_only_name = Tylko nazwa
+ctrl_partial = Częściowe
+ctrl_replace_all = Zamień wszystkie
+ctrl_start_number = Numer początkowy
+ctrl_step = Krok
+ctrl_text_to_find = Tekst do znalezienia
+ctrl_text_to_replace = Zamieniony tekst
+ctrl_trim_text = Tekst do przycięcia
+ctrl_uppercase = Wielkie litery
+ctrl_use_regex = Użyj wyrażenia regularnego
+dialog_add_folders_body = Skonfiguruj opcje skanowania
+dialog_add_folders_title = Foldery do uwzględnienia
+dialog_copy_all_errors = Skopiuj wszystkie błędy
+dialog_language_body = Wybierz język aplikacji
+dialog_language_restart = Uruchom ponownie
+dialog_language_restart_confirm = Język zmieni się po ponownym uruchomieniu. Uruchomić ponownie teraz?
+dialog_language_title = Język
+dialog_loading = Praca…
+dialog_move_down = Przesuń w dół
+dialog_move_up = Przesuń w górę
+dialog_save_rule_set_body = Wybierz nazwę reguł (jeśli istnieje, zostanie nadpisana)
+dialog_save_rule_set_name = Nazwa reguły
+dialog_save_rule_set_title = Zapisz zestaw reguł
+dialog_saved_rule_sets = Zapisane zestawy reguł
+dialog_select = Wybierz
+dialog_select_body = Wybierz akcję zaznaczania
+dialog_select_custom_body = Użycie: */folder*/* lub nazwa-wersja-*.txt
+dialog_select_custom_hint = Gdy tryb Katalog/Plik jest aktywny, wzorzec jest ignorowany.
+dialog_select_custom_include_dirs = Uwzględnij katalogi
+dialog_select_custom_match = Dopasuj do:
+dialog_select_custom_pattern = Wzorzec
+dialog_select_custom_title = Zaznacz / Odznacz niestandardowe
+empty_state_files_description = Dodaj pliki lub foldery, aby rozpocząć zmienianie nazw
+empty_state_files_title = Nie załadowano plików
+empty_state_rules_description = Dodaj regułę, aby określić, jak pliki mają być zmienione
+empty_state_rules_title = Nie skonfigurowano reguł
+menu_about = Informacje
+menu_appearance = Wygląd
+menu_dark_theme = Ciemny motyw
+menu_language = Język…
+menu_light_theme = Jasny motyw
+menu_open_config_dir = Otwórz folder konfiguracji
+menu_open_custom_texts_file = Otwórz plik niestandardowych tekstów
+menu_open_log_folder = Otwórz folder logów
+menu_open_rules_file = Otwórz plik ustawień reguł
+menu_preferences = Preferencje
+menu_title = Menu
+rule_editor_add = Dodaj regułę
+rule_editor_cancel = Anuluj
+rule_editor_custom_save = Zapisz niestandardową regułę
+rule_editor_custom_saved = Zapisane niestandardowe teksty:
+rule_editor_delete = Usuń
+rule_editor_edit = Edytuj regułę
+rule_editor_example = PRZYKŁAD
+rule_editor_example_after = Po:
+rule_editor_example_before = Przed:
+rule_editor_load = Wczytaj
+rule_editor_reset = Przywróć domyślne
+rule_editor_title = Edytor reguł
+rule_editor_tool_type = Typ narzędzia:
+rule_editor_usage_type = Typ użycia:
+rule_no_selection = Nie wybrano reguły. Wybierz regułę do edycji.
+select_custom_hint = Gdy tryb Katalog/Plik jest aktywny, wzorzec jest ignorowany.
+settings_theme = Motyw
+settings_theme_dark = Ciemny
+settings_theme_light = Jasny
+settings_theme_system = System
+sort_by = Sortuj według
+sort_descending = Malejąco
+sort_future_name = Nowa nazwa
+sort_name = Nazwa
+sort_path = Ścieżka
+sort_type = Typ
+sort_usage = Użycie
+status_up_to_date = aktualne
+status_update_required = WYMAGANA AKTUALIZACJA
+tab_add_number = Dodaj numer
+tab_add_text = Dodaj tekst
+tab_case_size = Wielkość liter
+tab_custom = Niestandardowe
+tab_normalize = Normalizuj nazwę
+tab_purge = Usuń
+tab_replace = Zamień
+tab_trim = Przytnij

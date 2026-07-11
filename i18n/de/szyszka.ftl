@@ -83,17 +83,16 @@ button_rule_window_add = Regel hinzufügen
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - druckt Dateiname
-    $(EXT) - Druckt die Erweiterung
-    $(MODIF) - Druckt das Änderungsdatum der Datei
-    $(CREAT) - Druckt die Erstellung der Datei
-    $(CURR) - Druckt den aktuellen Dateinamen mit der Erweiterung
-    $(PARENT) - Druckt den übergeordneten Ordnernamen
-    $(N)/$(K) - druckt Zahlen (Argumente sind optional)
-    $(N:3:4:5) gibt Zahlen aus 3 aus. mit Schritt 4
-            und füllt sie mit Nullen bis 5 Positionen.
-            K statt dessen nur Position in der Liste, verwendet auch Positionselement im Ordner.
+label_custom_instruction = $(NAME) - gibt den Dateinamen aus
+                           $(EXT) - gibt die Erweiterung aus
+                           $(MODIF) - gibt das Änderungsdatum der Datei aus
+                           $(CREAT) - gibt das Erstellungsdatum aus
+                           $(CURR) - gibt den aktuellen Dateinamen mit Erweiterung aus
+                           $(PARENT) - gibt den Namen des übergeordneten Ordners aus
+                           $(N)/$(K) - gibt Zahlen aus (Argumente sind optional)
+                           $(N:3:4:5) gibt Zahlen ab 3 aus, mit Schritt 4
+                           und füllt sie mit Nullen auf 5 Stellen auf.
+                           K gibt stattdessen nur die Position in der Liste an, ebenfalls die Position des Elements im Ordner.
 menu_button_load_custom_rule = Eigene Regelauswahl
 button_save_custom_rule = Eigene Regel speichern
 
@@ -211,3 +210,104 @@ renaming_missing_files = Fehlende Dateien
 renaming_require_missing_files = Sie müssen mindestens 1 Datei verwenden
 renaming_missing_rules = Fehlende Regeln
 renaming_require_missing_rules = Sie müssen mindestens 1 Regel verwenden
+
+
+# --- Missing translations added ---
+ctrl_after_name = Nach dem Namen
+ctrl_before_name = Vor dem Namen
+ctrl_both = Beides
+ctrl_case_insensitive = Groß-/Kleinschreibung ignorieren
+ctrl_case_sensitive = Groß-/Kleinschreibung beachten
+ctrl_everything = Alles
+ctrl_extension_end = Erweiterungsende
+ctrl_extension_start = Erweiterungsanfang
+ctrl_fill_zeros = Mit Nullen auffüllen
+ctrl_lowercase = Kleinschreibung
+ctrl_match_against = Abgleichen mit:
+ctrl_name_end = Namenende
+ctrl_name_start = Namenanfang
+ctrl_only_extension = Nur Erweiterung
+ctrl_only_name = Nur Name
+ctrl_partial = Teilweise
+ctrl_replace_all = Alle ersetzen
+ctrl_start_number = Startnummer
+ctrl_step = Schritt
+ctrl_text_to_find = Zu suchender Text
+ctrl_text_to_replace = Ersetzter Text
+ctrl_trim_text = Zu entfernender Text
+ctrl_uppercase = Großschreibung
+ctrl_use_regex = Regex verwenden
+dialog_add_folders_body = Scan-Optionen konfigurieren
+dialog_add_folders_title = Einzuschließende Ordner
+dialog_copy_all_errors = Alle Fehler kopieren
+dialog_language_body = Anwendungssprache auswählen
+dialog_language_restart = Neu starten
+dialog_language_restart_confirm = Die Sprache ändert sich nach dem Neustart. Jetzt neu starten?
+dialog_language_title = Sprache
+dialog_loading = Arbeitsvorgang…
+dialog_move_down = Nach unten
+dialog_move_up = Nach oben
+dialog_save_rule_set_body = Namen der Regeln wählen (falls vorhanden, wird er überschrieben)
+dialog_save_rule_set_name = Regelname
+dialog_save_rule_set_title = Regelsatz speichern
+dialog_saved_rule_sets = Gespeicherte Regelsätze
+dialog_select = Auswählen
+dialog_select_body = Auswahlaktion wählen
+dialog_select_custom_body = Verwendung: */ordner*/* oder name-version-*.txt
+dialog_select_custom_hint = Wenn der Verzeichnis-/Datei-Modus aktiv ist, wird das Muster ignoriert.
+dialog_select_custom_include_dirs = Verzeichnisse einschließen
+dialog_select_custom_match = Abgleichen mit:
+dialog_select_custom_pattern = Muster
+dialog_select_custom_title = Auswählen / Abwählen benutzerdefiniert
+empty_state_files_description = Dateien oder Ordner hinzufügen, um das Umbenennen zu starten
+empty_state_files_title = Keine Dateien geladen
+empty_state_rules_description = Füge eine Regel hinzu, um festzulegen, wie Dateien umbenannt werden sollen
+empty_state_rules_title = Keine Regeln konfiguriert
+menu_about = Über
+menu_appearance = Erscheinungsbild
+menu_dark_theme = Dunkles Theme
+menu_language = Sprache…
+menu_light_theme = Helles Theme
+menu_open_config_dir = Konfigurationsordner öffnen
+menu_open_custom_texts_file = Benutzerdefinierte Texte-Datei öffnen
+menu_open_log_folder = Protokollordner öffnen
+menu_open_rules_file = Regel-Einstellungsdatei öffnen
+menu_preferences = Einstellungen
+menu_title = Menü
+rule_editor_add = Regel hinzufügen
+rule_editor_cancel = Abbrechen
+rule_editor_custom_save = Benutzerdefinierte Regel speichern
+rule_editor_custom_saved = Gespeicherte benutzerdefinierte Texte:
+rule_editor_delete = Löschen
+rule_editor_edit = Regel bearbeiten
+rule_editor_example = BEISPIEL
+rule_editor_example_after = Nachher:
+rule_editor_example_before = Vorher:
+rule_editor_load = Laden
+rule_editor_reset = Auf Standard zurücksetzen
+rule_editor_title = Regeleditor
+rule_editor_tool_type = Werkzeugtyp:
+rule_editor_usage_type = Verwendungstyp:
+rule_no_selection = Keine Regel ausgewählt. Wähle eine Regel zum Bearbeiten.
+select_custom_hint = Wenn der Verzeichnis-/Datei-Modus aktiv ist, wird das Muster ignoriert.
+settings_theme = Theme
+settings_theme_dark = Dunkel
+settings_theme_light = Hell
+settings_theme_system = System
+sort_by = Sortieren nach
+sort_descending = Absteigend
+sort_future_name = Neuer Name
+sort_name = Name
+sort_path = Pfad
+sort_type = Typ
+sort_usage = Verwendung
+status_up_to_date = aktuell
+status_update_required = AKTUALISIERUNG ERFORDERLICH
+tab_add_number = Nummer hinzufügen
+tab_add_text = Text hinzufügen
+tab_case_size = Groß-/Kleinschreibung
+tab_custom = Benutzerdefiniert
+tab_normalize = Namen normalisieren
+tab_purge = Bereinigen
+tab_replace = Ersetzen
+tab_trim = Kürzen

@@ -83,17 +83,16 @@ button_rule_window_add = Ajouter une règle
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - affiche le nom du fichier
-    $(EXT) - affiche l'extension
-    $(MODIF) - affiche la date de modification du fichier
-    $(CREAT) - affiche la création du fichier
-    $(CURR) - affiche le nom du fichier actuel avec l'extension
-    $(PARENT) - affiche le nom du dossier parent
-    $(N)/$(K) - affiche les nombres (les arguments sont facultatifs)
-    $(N:3:4:5) affiche les numéros à partir de 3, avec l'étape 4
-            et les remplit avec des zéros à 5 positions.
-            K à la place seulement position dans la liste, utilise également l'élément de position dans le dossier.
+label_custom_instruction = $(NAME) - affiche le nom du fichier
+                           $(EXT) - affiche l'extension
+                           $(MODIF) - affiche la date de modification du fichier
+                           $(CREAT) - affiche la date de création du fichier
+                           $(CURR) - affiche le nom actuel du fichier avec l'extension
+                           $(PARENT) - affiche le nom du dossier parent
+                           $(N)/$(K) - affiche des nombres (les arguments sont optionnels)
+                           $(N:3:4:5) affiche des nombres à partir de 3, avec un pas de 4
+                           et les remplit de zéros jusqu'à 5 positions.
+                           K affiche à la place seulement la position dans la liste, utilise aussi la position de l'élément dans le dossier.
 menu_button_load_custom_rule = Sélecteur de règles personnalisé
 button_save_custom_rule = Enregistrer la règle personnalisée
 
@@ -211,3 +210,104 @@ renaming_missing_files = Fichiers manquants
 renaming_require_missing_files = Vous devez utiliser au moins 1 fichier
 renaming_missing_rules = Règles manquantes
 renaming_require_missing_rules = Vous devez utiliser au moins 1 règle
+
+
+# --- Missing translations added ---
+ctrl_after_name = Après le nom
+ctrl_before_name = Avant le nom
+ctrl_both = Les deux
+ctrl_case_insensitive = Ignorer la casse
+ctrl_case_sensitive = Respecter la casse
+ctrl_everything = Tout
+ctrl_extension_end = Fin de l'extension
+ctrl_extension_start = Début de l'extension
+ctrl_fill_zeros = Remplir avec des zéros
+ctrl_lowercase = Minuscules
+ctrl_match_against = Correspondance avec :
+ctrl_name_end = Fin du nom
+ctrl_name_start = Début du nom
+ctrl_only_extension = Extension uniquement
+ctrl_only_name = Nom uniquement
+ctrl_partial = Partiel
+ctrl_replace_all = Tout remplacer
+ctrl_start_number = Numéro de départ
+ctrl_step = Pas
+ctrl_text_to_find = Texte à rechercher
+ctrl_text_to_replace = Texte remplacé
+ctrl_trim_text = Texte à couper
+ctrl_uppercase = Majuscules
+ctrl_use_regex = Utiliser une regex
+dialog_add_folders_body = Configurer les options d'analyse
+dialog_add_folders_title = Dossiers à inclure
+dialog_copy_all_errors = Copier toutes les erreurs
+dialog_language_body = Choisir la langue de l'application
+dialog_language_restart = Redémarrer
+dialog_language_restart_confirm = La langue changera après le redémarrage. Redémarrer maintenant ?
+dialog_language_title = Langue
+dialog_loading = Travail…
+dialog_move_down = Déplacer vers le bas
+dialog_move_up = Déplacer vers le haut
+dialog_save_rule_set_body = Choisissez le nom des règles (s'il existe, il sera remplacé)
+dialog_save_rule_set_name = Nom de la règle
+dialog_save_rule_set_title = Enregistrer le jeu de règles
+dialog_saved_rule_sets = Jeux de règles enregistrés
+dialog_select = Sélectionner
+dialog_select_body = Choisir une action de sélection
+dialog_select_custom_body = Utilisation : */dossier*/* ou nom-version-*.txt
+dialog_select_custom_hint = Lorsque le mode Répertoire/Fichier est actif, le motif est ignoré.
+dialog_select_custom_include_dirs = Inclure les répertoires
+dialog_select_custom_match = Correspondance avec :
+dialog_select_custom_pattern = Motif
+dialog_select_custom_title = Sélectionner / Désélectionner personnalisé
+empty_state_files_description = Ajoutez des fichiers ou des dossiers pour commencer à renommer
+empty_state_files_title = Aucun fichier chargé
+empty_state_rules_description = Ajoutez une règle pour définir comment renommer les fichiers
+empty_state_rules_title = Aucune règle configurée
+menu_about = À propos
+menu_appearance = Apparence
+menu_dark_theme = Thème sombre
+menu_language = Langue…
+menu_light_theme = Thème clair
+menu_open_config_dir = Ouvrir le dossier de configuration
+menu_open_custom_texts_file = Ouvrir le fichier de textes personnalisés
+menu_open_log_folder = Ouvrir le dossier des journaux
+menu_open_rules_file = Ouvrir le fichier de paramètres des règles
+menu_preferences = Préférences
+menu_title = Menu
+rule_editor_add = Ajouter une règle
+rule_editor_cancel = Annuler
+rule_editor_custom_save = Enregistrer la règle personnalisée
+rule_editor_custom_saved = Textes personnalisés enregistrés :
+rule_editor_delete = Supprimer
+rule_editor_edit = Modifier la règle
+rule_editor_example = EXEMPLE
+rule_editor_example_after = Après :
+rule_editor_example_before = Avant :
+rule_editor_load = Charger
+rule_editor_reset = Réinitialiser par défaut
+rule_editor_title = Éditeur de règles
+rule_editor_tool_type = Type d'outil :
+rule_editor_usage_type = Type d'utilisation :
+rule_no_selection = Aucune règle sélectionnée. Sélectionnez une règle à modifier.
+select_custom_hint = Lorsque le mode Répertoire/Fichier est actif, le motif est ignoré.
+settings_theme = Thème
+settings_theme_dark = Sombre
+settings_theme_light = Clair
+settings_theme_system = Système
+sort_by = Trier par
+sort_descending = Décroissant
+sort_future_name = Nouveau nom
+sort_name = Nom
+sort_path = Chemin
+sort_type = Type
+sort_usage = Utilisation
+status_up_to_date = à jour
+status_update_required = MISE À JOUR REQUISE
+tab_add_number = Ajouter un numéro
+tab_add_text = Ajouter du texte
+tab_case_size = Majuscules/Minuscules
+tab_custom = Personnalisé
+tab_normalize = Normaliser le nom
+tab_purge = Purger
+tab_replace = Remplacer
+tab_trim = Couper

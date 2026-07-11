@@ -83,17 +83,16 @@ button_rule_window_add = Добавить правило
 
 ## Custom
 
-label_custom_instruction =
-    $(NAME) - выводит имя файла
-    $(EXT) - выводит расширение
-    $(MODIF) - выводит дату модификации файла
-    $(CREAT) - выводит создание файла
-    $(CURR) - выводит текущее имя файла с расширением
-    $(PARENT) - выводит имя родительской папки
-    $(N)/$(K) - выводит numbers(аргументы являются необязательными)
-    $(N:3:4:5) выводит числа из 3, на четвертом шаге
-            и заполняет их нулями до 5 позиций.
-            К вместо этого только позиция в списке, также использует элемент позиции в папке.
+label_custom_instruction = $(NAME) - выводит имя файла
+                           $(EXT) - выводит расширение
+                           $(MODIF) - выводит дату изменения файла
+                           $(CREAT) - выводит дату создания файла
+                           $(CURR) - выводит текущее имя файла с расширением
+                           $(PARENT) - выводит имя родительской папки
+                           $(N)/$(K) - выводит числа (аргументы необязательны)
+                           $(N:3:4:5) выводит числа с 3, с шагом 4
+                           и дополняет их нулями до 5 позиций.
+                           K вместо этого только позицию в списке, также использует позицию элемента в папке.
 menu_button_load_custom_rule = Пользовательский выбор правил
 button_save_custom_rule = Сохранить пользовательское правило
 
@@ -211,3 +210,104 @@ renaming_missing_files = Отсутствующие файлы
 renaming_require_missing_files = Вы должны использовать хотя бы 1 файл
 renaming_missing_rules = Пропущенные правила
 renaming_require_missing_rules = Вы должны использовать по крайней мере 1 правило
+
+
+# --- Missing translations added ---
+ctrl_after_name = После имени
+ctrl_before_name = Перед именем
+ctrl_both = Оба
+ctrl_case_insensitive = Без учёта регистра
+ctrl_case_sensitive = Учитывать регистр
+ctrl_everything = Всё
+ctrl_extension_end = Конец расширения
+ctrl_extension_start = Начало расширения
+ctrl_fill_zeros = Дополнить нулями
+ctrl_lowercase = Строчные
+ctrl_match_against = Сопоставить с:
+ctrl_name_end = Конец имени
+ctrl_name_start = Начало имени
+ctrl_only_extension = Только расширение
+ctrl_only_name = Только имя
+ctrl_partial = Частично
+ctrl_replace_all = Заменить все
+ctrl_start_number = Начальный номер
+ctrl_step = Шаг
+ctrl_text_to_find = Текст для поиска
+ctrl_text_to_replace = Заменяемый текст
+ctrl_trim_text = Текст для удаления
+ctrl_uppercase = Прописные
+ctrl_use_regex = Использовать регулярное выражение
+dialog_add_folders_body = Настроить параметры сканирования
+dialog_add_folders_title = Папки для включения
+dialog_copy_all_errors = Копировать все ошибки
+dialog_language_body = Выберите язык приложения
+dialog_language_restart = Перезапустить
+dialog_language_restart_confirm = Язык изменится после перезапуска. Перезапустить сейчас?
+dialog_language_title = Язык
+dialog_loading = Работа…
+dialog_move_down = Переместить вниз
+dialog_move_up = Переместить вверх
+dialog_save_rule_set_body = Выберите имя правил (если существует, будет перезаписано)
+dialog_save_rule_set_name = Имя правила
+dialog_save_rule_set_title = Сохранить набор правил
+dialog_saved_rule_sets = Сохранённые наборы правил
+dialog_select = Выбрать
+dialog_select_body = Выберите действие выделения
+dialog_select_custom_body = Использование: */папка*/* или имя-версия-*.txt
+dialog_select_custom_hint = Когда активен режим Каталог/Файл, шаблон игнорируется.
+dialog_select_custom_include_dirs = Включить каталоги
+dialog_select_custom_match = Сопоставить с:
+dialog_select_custom_pattern = Шаблон
+dialog_select_custom_title = Выбрать / Снять выбор (настроить)
+empty_state_files_description = Добавьте файлы или папки, чтобы начать переименование
+empty_state_files_title = Файлы не загружены
+empty_state_rules_description = Добавьте правило, чтобы определить, как переименовывать файлы
+empty_state_rules_title = Правила не настроены
+menu_about = О программе
+menu_appearance = Внешний вид
+menu_dark_theme = Тёмная тема
+menu_language = Язык…
+menu_light_theme = Светлая тема
+menu_open_config_dir = Открыть папку конфигурации
+menu_open_custom_texts_file = Открыть файл пользовательских текстов
+menu_open_log_folder = Открыть папку журналов
+menu_open_rules_file = Открыть файл настроек правил
+menu_preferences = Настройки
+menu_title = Меню
+rule_editor_add = Добавить правило
+rule_editor_cancel = Отмена
+rule_editor_custom_save = Сохранить пользовательское правило
+rule_editor_custom_saved = Сохранённые пользовательские тексты:
+rule_editor_delete = Удалить
+rule_editor_edit = Изменить правило
+rule_editor_example = ПРИМЕР
+rule_editor_example_after = После:
+rule_editor_example_before = До:
+rule_editor_load = Загрузить
+rule_editor_reset = Сбросить по умолчанию
+rule_editor_title = Редактор правил
+rule_editor_tool_type = Тип инструмента:
+rule_editor_usage_type = Тип использования:
+rule_no_selection = Правило не выбрано. Выберите правило для изменения.
+select_custom_hint = Когда активен режим Каталог/Файл, шаблон игнорируется.
+settings_theme = Тема
+settings_theme_dark = Тёмная
+settings_theme_light = Светлая
+settings_theme_system = Системная
+sort_by = Сортировать по
+sort_descending = По убыванию
+sort_future_name = Новое имя
+sort_name = Имя
+sort_path = Путь
+sort_type = Тип
+sort_usage = Использование
+status_up_to_date = актуально
+status_update_required = ТРЕБУЕТСЯ ОБНОВЛЕНИЕ
+tab_add_number = Добавить номер
+tab_add_text = Добавить текст
+tab_case_size = Регистр
+tab_custom = Пользовательское
+tab_normalize = Нормализовать имя
+tab_purge = Очистить
+tab_replace = Заменить
+tab_trim = Обрезать
