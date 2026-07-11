@@ -1,6 +1,7 @@
 use adw::prelude::*;
 
 use crate::state::SharedState;
+use crate::ui::state_ui::SharedGuiState;
 
 pub fn show_message_dialog(window: &adw::ApplicationWindow, title: &str, message: &str) {
     let dialog = adw::AlertDialog::builder().heading(title).body(message).build();
@@ -8,7 +9,7 @@ pub fn show_message_dialog(window: &adw::ApplicationWindow, title: &str, message
     dialog.present(Some(window));
 }
 
-pub fn show_confirm_dialog(window: &adw::ApplicationWindow, state: SharedState, file_count: i32) {
+pub fn show_confirm_dialog(window: &adw::ApplicationWindow, state: SharedState, gui_state: SharedGuiState, file_count: i32) {
     let dialog = adw::AlertDialog::builder()
         .heading(&crate::fls!("dialog_confirm_renaming"))
         .body(format!("{} {}", crate::fls!("renaming_question"), file_count))
@@ -19,7 +20,7 @@ pub fn show_confirm_dialog(window: &adw::ApplicationWindow, state: SharedState, 
 
     let window_clone = window.clone();
     dialog.connect_response(Some("rename"), move |_, _| {
-        crate::connect::renaming::perform_renaming_gtk(&window_clone, &state);
+        crate::connect::renaming::perform_renaming_gtk(&window_clone, &state, &gui_state);
     });
     dialog.present(Some(window));
 }

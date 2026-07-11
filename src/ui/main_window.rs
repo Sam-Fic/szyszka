@@ -643,10 +643,12 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
         let pb = progress_banner;
         let file_stack_c = file_stack;
         let rule_stack_c = rule_stack;
+        let state_loop = state.clone();
         glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
             let file_count = file_store_c.n_items() as i32;
             let rule_count = rule_store_c.n_items() as i32;
             let outdated = gs.borrow().results_outdated;
+            let busy = state_loop.borrow().async_active;
             let t = tr.borrow();
             if outdated && file_count > 0 {
                 file_status_c.set_label(&format!("{} ({}) - {}", t.upper_files_folders_label, file_count, crate::fls!("status_update_required")));
@@ -655,8 +657,8 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
             } else {
                 file_status_c.set_label(&t.upper_files_folders_label);
             }
-            start_btn_c.set_sensitive(file_count > 0 && rule_count > 0);
-            update_btn_c.set_sensitive(file_count > 0);
+            start_btn_c.set_sensitive(file_count > 0 && rule_count > 0 && !busy);
+            update_btn_c.set_sensitive(file_count > 0 && !busy);
             file_stack_c.set_visible_child_name(if file_count > 0 { "list" } else { "empty" });
             if rule_count > 0 {
                 rule_status_c.set_label(&format!("{} ({})", t.bottom_rule_label_rules, rule_count));
@@ -692,8 +694,9 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
     {
         let window = window.clone();
         let state = state.clone();
+        let gui_state_start = gui_state.clone();
         start_btn.connect_clicked(move |_| {
-            crate::connect::renaming::start_renaming_request(&window, &state);
+            crate::connect::renaming::start_renaming_request(&window, &state, gui_state_start.clone());
         });
     }
 
