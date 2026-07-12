@@ -190,6 +190,9 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
          }
          .drop-area:drop(active) {
              border-color: @accent_bg_color;
+         }
+         listview, scrolledwindow, scrolledwindow > viewport {
+             background: transparent;
          }",
     );
     // Will be added to display after window is realized
