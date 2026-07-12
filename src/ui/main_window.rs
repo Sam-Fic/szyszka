@@ -165,22 +165,22 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
              padding: 9px;
          }
          .list-card-header > * { margin: 0; }
-         listview row { padding: 0; }
-         listview row:hover { background: transparent; }
-         listview row:active { background: transparent; }
+         .main-list-view row { padding: 0; }
+         .main-list-view row:hover { background: transparent; }
+         .main-list-view row:active { background: transparent; }
          .list-row {
              background: transparent;
              border-radius: 8px;
              padding: 9px 10px;
          }
-         listview row:hover .list-row {
+         .main-list-view row:hover .list-row {
              background: alpha(@window_fg_color, 0.06);
          }
-         listview row:selected {
+         .main-list-view row:selected {
              background: transparent;
              color: @window_fg_color;
          }
-         listview row:selected .list-row {
+         .main-list-view row:selected .list-row {
              background: alpha(@window_fg_color, 0.22);
          }
          .drop-area {
@@ -191,7 +191,7 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
          .drop-area:drop(active) {
              border-color: @accent_bg_color;
          }
-         listview, scrolledwindow, scrolledwindow > viewport {
+         .main-list-view, scrolledwindow, scrolledwindow > viewport {
              background: transparent;
          }",
     );
@@ -924,9 +924,9 @@ pub fn build_gtk_app(app: &adw::Application, state: SharedState, editor_state: S
 fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw::StyleManager) {
     let dialog = adw::PreferencesDialog::new();
 
-    let appearance_page = adw::PreferencesPage::new();
-    appearance_page.set_icon_name(Some("preferences-desktop-appearance-symbolic"));
-    appearance_page.set_title(&crate::fls!("menu_appearance"));
+    let prefs_page = adw::PreferencesPage::new();
+    prefs_page.set_icon_name(Some("preferences-desktop-symbolic"));
+    prefs_page.set_title(&crate::fls!("menu_preferences"));
     let appearance_group = adw::PreferencesGroup::builder().title(&crate::fls!("menu_appearance")).build();
     let theme_row = adw::ComboRow::builder()
         .title(&crate::fls!("settings_theme"))
@@ -954,12 +954,8 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
         });
     }
     appearance_group.add(&theme_row);
-    appearance_page.add(&appearance_group);
-    dialog.add(&appearance_page);
+    prefs_page.add(&appearance_group);
 
-    let language_page = adw::PreferencesPage::new();
-    language_page.set_icon_name(Some("preferences-desktop-locale-symbolic"));
-    language_page.set_title(&crate::fls!("settings_language_label"));
     let language_group = adw::PreferencesGroup::builder().title(&crate::fls!("settings_language_label")).build();
     let saved_lang = crate::config::load_saved_language();
     let lang_combo = adw::ComboRow::builder()
@@ -992,8 +988,8 @@ fn show_preferences_dialog(window: &adw::ApplicationWindow, style_manager: &adw:
         });
     }
     language_group.add(&lang_combo);
-    language_page.add(&language_group);
-    dialog.add(&language_page);
+    prefs_page.add(&language_group);
+    dialog.add(&prefs_page);
     dialog.present(Some(window));
 }
 
@@ -1202,6 +1198,7 @@ fn build_file_list_view(state: &SharedState, _window: &adw::ApplicationWindow) -
     let sort_model = gtk::SortListModel::new(Some(file_store.clone()), None::<gtk::Sorter>);
     let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
     let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    list_view.add_css_class("main-list-view");
     list_view.set_show_separators(false);
     list_view.set_single_click_activate(false);
     state.borrow_mut().file_selection = Some(selection.clone());
@@ -1319,6 +1316,7 @@ fn build_rule_list_view(
 
     let sort_model = gtk::SortListModel::new(Some(rule_store.clone()), None::<gtk::Sorter>);
     let list_view = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    list_view.add_css_class("main-list-view");
     list_view.set_show_separators(false);
     list_view.set_single_click_activate(false);
     // Double-click to edit rule
